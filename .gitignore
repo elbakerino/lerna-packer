@@ -1,0 +1,18 @@
+# env variables
+.env
+.npmrc
+# NodeJS
+node_modules
+
+# Mac
+.DS_Store
+
+lerna-debug.log
+profile.json
+
+#
+## JetBrains IDE's
+
+.idea/
+*.iml
+*.iws
