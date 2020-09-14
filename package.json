@@ -1,12 +1,19 @@
 {
     "name": "lerna-packer",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "",
     "typings": "./index.d.ts",
     "main": "index.js",
     "scripts": {},
     "author": "Michael Becker, https://mlbr.xyz",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/elbakerino/lerna-packer.git"
+    },
+    "bugs": {
+        "url": "https://github.com/elbakerino/lerna-packer/issues"
+    },
     "dependencies": {
         "@babel/node": "^7.10.5",
         "@babel/cli": "^7.11.6",
