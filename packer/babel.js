@@ -1,10 +1,31 @@
 const path = require('path');
+const fs = require('fs');
 const {spawn} = require('cross-spawn');
 const {createModulePackages} = require('./modulePackages');
 
 const spawnBabel = (args) => {
     // todo: babel path is risky, need to be checked for existence/should use normal module resolution
-    return spawn(require.resolve('../../.bin/babel'), args, {stdio: 'inherit'});
+    let path = ''
+    try {
+        path = require.resolve('../.bin/babel')
+    } catch(e) {
+        // console.log('not found: ../.bin/babel')
+    }
+    try {
+        if(!path) {
+            path = require.resolve('../../.bin/babel')
+        }
+    } catch(e) {
+        // console.log('not found: ../../.bin/babel')
+    }
+    try {
+        if(!path) {
+            path = require.resolve('../../../.bin/babel')
+        }
+    } catch(e) {
+        // console.log('not found: ../../../.bin/babel')
+    }
+    return spawn(path, args, {stdio: 'inherit'});
 };
 
 function buildEsModules(packages, targets = [
