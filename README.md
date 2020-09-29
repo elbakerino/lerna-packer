@@ -103,6 +103,7 @@ Add `babel.config.json` or similiar:
         "@babel/plugin-syntax-dynamic-import",
         "@babel/plugin-transform-react-jsx",
         "@babel/plugin-transform-template-literals",
+        "@babel/plugin-proposal-optional-chaining",
         "@babel/plugin-proposal-export-namespace-from",
         "@babel/plugin-proposal-export-default-from",
         "@babel/plugin-transform-runtime",
