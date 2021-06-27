@@ -1,10 +1,10 @@
-'use strict';
-const HtmlWebpackPlugin = require("html-webpack-plugin");
-const InlineChunkHtmlPlugin = require('react-dev-utils/InlineChunkHtmlPlugin');
-const CopyPlugin = require('copy-webpack-plugin');
-const {merge} = require('webpack-merge');
-const {getConfig} = require('./webpack.common');
-const path = require('path');
+'use strict'
+const HtmlWebpackPlugin = require('html-webpack-plugin')
+const InlineChunkHtmlPlugin = require('react-dev-utils/InlineChunkHtmlPlugin')
+const CopyPlugin = require('copy-webpack-plugin')
+const {merge} = require('webpack-merge')
+const {getConfig} = require('./webpack.common')
+const path = require('path')
 
 const buildAppConfig = (main, dist, root, template) => ({
     entry: {
@@ -12,10 +12,9 @@ const buildAppConfig = (main, dist, root, template) => ({
         main: main,
     },
     output: {
-        filename: 'assets/[name].[hash:8].js',
+        filename: 'assets/[name].[fullHash:8].js',
         path: dist,
-        chunkFilename: 'assets/[name].chunk.[hash:8].js',
-        futureEmitAssets: true,
+        chunkFilename: 'assets/[name].chunk.[fullHash:8].js',
     },
     performance: {
         hints: false,
@@ -26,7 +25,7 @@ const buildAppConfig = (main, dist, root, template) => ({
         // todo: make as strict as possible, only include needed ones
         modules: [
             path.resolve(root, 'node_modules'),
-            "node_modules",
+            'node_modules',
         ],
     },
     module: {
@@ -36,18 +35,20 @@ const buildAppConfig = (main, dist, root, template) => ({
             use: [
                 'url-loader?limit=10000',
                 'img-loader',
-                'file-loader?name=[name].[ext]?[hash]'
-            ]
+                'file-loader?name=[name].[ext]?[fullHash]',
+            ],
         }, {
             // the following 3 rules handle font extraction
             test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-            loader: 'url-loader?limit=10000&mimetype=application/font-woff'
+            use: [
+                'url-loader?limit=10000&mimetype=application/font-woff',
+            ],
         }, {
             test: /\.(ttf|eot)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-            loader: 'file-loader'
+            loader: 'file-loader',
         }, {
             test: /\.otf(\?.*)?$/,
-            use: 'file-loader?name=/fonts/[name].[ext]&mimetype=application/font-otf'
+            use: 'file-loader?name=/fonts/[name].[ext]&mimetype=application/font-otf',
         }, {
             loader: 'file-loader',
             // Exclude `js` files to keep "css" loader working as it injects
@@ -56,9 +57,9 @@ const buildAppConfig = (main, dist, root, template) => ({
             // by webpacks internal loaders.
             exclude: [/\.(js|css|s[ac]ss|mjs|jsx|ts|tsx)$/, /\.html$/, /\.json$/],
             options: {
-                name: 'assets/media/[name].[hash:8].[ext]',
+                name: 'assets/media/[name].[fullHash:8].[ext]',
             },
-        },],
+        }],
     },
     optimization: {
         splitChunks: {
@@ -69,9 +70,9 @@ const buildAppConfig = (main, dist, root, template) => ({
                 vendors: false,
                 vendor: {
                     chunks: 'all',
-                    test: /node_modules/
-                }
-            }
+                    test: /node_modules/,
+                },
+            },
         },
     },
     plugins: [
@@ -96,14 +97,14 @@ const buildAppConfig = (main, dist, root, template) => ({
                             minifyURLs: true,
                         },
                     }
-                    : undefined
-            )
+                    : undefined,
+            ),
         ),
 
         // doesnt work with v4 of HtmlWebpackPlugin, but we need HtmlWebpackPlugin for the code splitting it seems
         //new InterpolateHtmlPlugin(HtmlWebpackPlugin, buildEnv(paths.demo.servedPath).raw),
     ],
-});
+})
 
 /**
  * @param main
@@ -129,8 +130,8 @@ const buildAppPair = ({main, dist, root, template, publicPath, port, vendors = [
                 resolve: {
                     alias: Object.values(packages).reduce((aliases, {name, entry}) => {
                         aliases[name] = entry
-                        return aliases;
-                    }, {})
+                        return aliases
+                    }, {}),
                 },
                 devServer: {
                     contentBase: publicPath,
@@ -143,14 +144,13 @@ const buildAppPair = ({main, dist, root, template, publicPath, port, vendors = [
                 },
                 optimization: {
                     runtimeChunk: 'single',
-                    namedModules: true,
                 },
                 plugins: [
-                    new CopyPlugin(copy),
+                    ...(copy.length ? [new CopyPlugin({patterns: copy})] : []),
                 ],
                 //devtool: 'eval-cheap-module-source-map',// faster rebuild, not for production
                 devtool: 'cheap-module-source-map',// slow build, for production
-            }
+            },
         ), {
             context: root,
             minimize: false,
@@ -159,10 +159,10 @@ const buildAppPair = ({main, dist, root, template, publicPath, port, vendors = [
                     path.resolve(root, 'es')
                 ),*/
                 Object.values(packages).map(({root}) =>
-                    path.resolve(root, 'src')
+                    path.resolve(root, 'src'),
                 ),
             ],
-        }
+        },
     ),
     build: () => getConfig(
         merge(
@@ -174,28 +174,30 @@ const buildAppPair = ({main, dist, root, template, publicPath, port, vendors = [
                 resolve: {
                     alias: Object.values(packages).reduce((aliases, {name, root}) => {
                         aliases[name] = root + '/build'
-                        return aliases;
-                    }, {})
+                        return aliases
+                    }, {}),
                 },
                 optimization: {
                     runtimeChunk: 'single',
                 },
                 plugins: [
-                    new CopyPlugin([
-                        {from: publicPath, to: dist},
-                        ...copy
-                    ]),
+                    new CopyPlugin({
+                        patterns: [
+                            {from: publicPath, to: dist},
+                            ...copy,
+                        ],
+                    }),
                     // Inlines the webpack runtime script. This script is too small to warrant
                     // a network request.
                     // https://github.com/facebook/create-react-app/issues/5358
-                    new InlineChunkHtmlPlugin(HtmlWebpackPlugin, [/runtime-.+[.]js/])
-                ]
-            }
+                    new InlineChunkHtmlPlugin(HtmlWebpackPlugin, [/runtime-.+[.]js/]),
+                ],
+            },
         ), {
             context: root,
             minimize: true,
-        }
-    )
-});
+        },
+    ),
+})
 
-exports.buildAppPair = buildAppPair;
+exports.buildAppPair = buildAppPair

@@ -1,9 +1,9 @@
-'use strict';
+'use strict'
 
-const path = require('path');
-const {merge} = require('webpack-merge');
-const isWsl = require('is-wsl');
-const TerserPlugin = require('terser-webpack-plugin');
+const path = require('path')
+const {merge} = require('webpack-merge')
+const isWsl = require('is-wsl')
+const TerserPlugin = require('terser-webpack-plugin')
 
 function getConfig(
     customConfig = {},
@@ -45,7 +45,7 @@ function getConfig(
                         ...include,
                     ],
                     use: [{
-                        loader: "babel-loader",
+                        loader: 'babel-loader',
                         options: {
                             /*presets: [
                                 ...babelPresets,
@@ -60,8 +60,8 @@ function getConfig(
                             // See #6846 for context on why cacheCompression is disabled
                             cacheCompression: false,
                             compact: minimize,
-                        }
-                    }]
+                        },
+                    }],
                 }, {
                     // Process any JS outside of the app with Babel.
                     // Unlike the application JS, we only compile the standard ES features.
@@ -71,7 +71,7 @@ function getConfig(
                         path.join(context, 'src'),
                         ...include,
                     ],
-                    loaders: 'babel-loader',
+                    loader: 'babel-loader',
                     options: {
                         babelrc: false,
                         configFile: false,
@@ -95,20 +95,23 @@ function getConfig(
                     test: /\.html$/i,
                     // exclude: [/node_modules/],
                     use: [{
-                        loader: 'ejs-loader'
+                        loader: 'ejs-loader',
                     }, {
-                        loader: 'extract-loader'
+                        loader: 'extract-loader',
                     }, {
                         loader: 'html-loader',
                         options: {
                             minimize: minimize,
                             interpolate: false,
-                        }
+                        },
                     }],
                 }, {
                     test: /\.css$/i,
                     exclude: [/node_modules/],
-                    loader: 'style-loader!css-loader'
+                    use: [
+                        'style-loader',
+                        'css-loader',
+                    ],
                 }, {
                     test: /\.css$/i,
                     include: [/node_modules/],
@@ -176,9 +179,9 @@ function getConfig(
                 parallel: !isWsl,
             })],
         },
-    };
+    }
 
-    return merge(config, customConfig);
+    return merge(config, customConfig)
 }
 
-exports.getConfig = getConfig;
+exports.getConfig = getConfig
