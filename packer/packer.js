@@ -6,7 +6,7 @@ const {buildEsModules} = require('./babel');
 const {buildWebpack, serveWebpack} = require('./webpack');
 const {buildAppPair} = require('./webpack.apps');
 
-const packer = (apps, packages, root) => {
+const packer = (apps, packages, root, babelTargets = undefined) => {
     const doServe = argv['serve'] === true ? true : (argv['serve'] || false);
     const doClean = !!argv['clean'];
     const doBuild = !!argv['build'];
@@ -81,7 +81,7 @@ module.exports = {
         new Promise((resolve) => {
             if(!doBuildBabel) return resolve()
             console.log('Starting ES6 build for ' + packagesNames.length + ' modules: `' + packagesNames.join(', ') + '`');
-            buildEsModules(packages)
+            buildEsModules(packages, babelTargets)
                 .then(() => resolve())
                 .catch(err => {
                     console.error(err);

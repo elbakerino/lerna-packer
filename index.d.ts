@@ -18,13 +18,14 @@ export interface PackageConfig {
     }
 }
 
-/**
- *
- * @param apps
- * @param packages
- * @param root absolute folder for e.g. profile
- */
-export function packer(apps: { [key: string]: AppsConfig }, packages: { [key: string]: PackageConfig }, root: string): void
+export function packer(
+    apps: { [key: string]: AppsConfig },
+    packages: { [key: string]: PackageConfig },
+    // absolute folder for e.g. profiling output
+    root: string,
+    // custom babel targets, `args` are passed to all pure-babel processes
+    babelTargets?: { distSuffix: string, args: string[] }[]
+): void
 
 export function buildEnv(servedPath: string): any
 
