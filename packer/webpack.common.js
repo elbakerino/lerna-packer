@@ -96,13 +96,15 @@ function getConfig(
                     // exclude: [/node_modules/],
                     use: [{
                         loader: 'ejs-loader',
+                        options: {
+                            esModule: false,
+                        },
                     }, {
                         loader: 'extract-loader',
                     }, {
                         loader: 'html-loader',
                         options: {
                             minimize: minimize,
-                            interpolate: false,
                         },
                     }],
                 }, {
