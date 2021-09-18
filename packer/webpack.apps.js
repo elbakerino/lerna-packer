@@ -12,9 +12,9 @@ const buildAppConfig = (main, dist, root, template) => ({
         main: main,
     },
     output: {
-        filename: 'assets/[name].[fullHash:8].js',
+        filename: 'assets/[name].[fullhash:8].js',
         path: dist,
-        chunkFilename: 'assets/[name].chunk.[fullHash:8].js',
+        chunkFilename: 'assets/[name].chunk.[fullhash:8].js',
     },
     performance: {
         hints: false,
@@ -35,7 +35,7 @@ const buildAppConfig = (main, dist, root, template) => ({
             use: [
                 'url-loader?limit=10000',
                 'img-loader',
-                'file-loader?name=[name].[ext]?[fullHash]',
+                'file-loader?name=[name].[ext]?[fullhash]',
             ],
         }, {
             // the following 3 rules handle font extraction
@@ -57,7 +57,7 @@ const buildAppConfig = (main, dist, root, template) => ({
             // by webpacks internal loaders.
             exclude: [/\.(js|css|s[ac]ss|mjs|jsx|ts|tsx)$/, /\.html$/, /\.json$/],
             options: {
-                name: 'assets/media/[name].[fullHash:8].[ext]',
+                name: 'assets/media/[name].[contenthash:8].[ext]',
             },
         }],
     },
@@ -100,9 +100,6 @@ const buildAppConfig = (main, dist, root, template) => ({
                     : undefined,
             ),
         ),
-
-        // doesnt work with v4 of HtmlWebpackPlugin, but we need HtmlWebpackPlugin for the code splitting it seems
-        //new InterpolateHtmlPlugin(HtmlWebpackPlugin, buildEnv(paths.demo.servedPath).raw),
     ],
 })
 
@@ -115,14 +112,26 @@ const buildAppConfig = (main, dist, root, template) => ({
  * @param port
  * @param vendors
  * @param copy
+ * @param plugins
  * @param packages
- * @return {{build: (function(): (function(...[*]=))|(function(): (*))), dist: *, serve: (function(): (function(...[*]=))|(function(): (*)))}}
+ * @return {{build: (function(): {resolve: {extensions: string[]}, optimization: {minimize: boolean, minimizer: *[]}, module: {rules: [{include: *[], test: RegExp, loader: string, options: {formatter: string, cache: boolean, eslintPath: string, emitWarning: boolean}, enforce: string}, {include: *[], test: RegExp, use: [{loader: string, options: {cacheCompression: boolean, compact: boolean, cacheDirectory: boolean}}]}, {test: RegExp, loader: string, options: {cacheCompression: boolean, presets: [string, {helpers: boolean}][], compact: boolean, babelrc: boolean, configFile: boolean, cacheDirectory: boolean, sourceMaps: boolean}, exclude: *[]}, {test: RegExp, use: [{loader: string, options: {esModule: boolean}}, {loader: string}, {loader: string, options: {minimize: boolean}}]}, {test: RegExp, use: string[], exclude: RegExp[]}, null, null]}}), dist, serve: (function(): {resolve: {extensions: string[]}, optimization: {minimize: boolean, minimizer: *[]}, module: {rules: [{include: *[], test: RegExp, loader: string, options: {formatter: string, cache: boolean, eslintPath: string, emitWarning: boolean}, enforce: string}, {include: *[], test: RegExp, use: [{loader: string, options: {cacheCompression: boolean, compact: boolean, cacheDirectory: boolean}}]}, {test: RegExp, loader: string, options: {cacheCompression: boolean, presets: [string, {helpers: boolean}][], compact: boolean, babelrc: boolean, configFile: boolean, cacheDirectory: boolean, sourceMaps: boolean}, exclude: *[]}, {test: RegExp, use: [{loader: string, options: {esModule: boolean}}, {loader: string}, {loader: string, options: {minimize: boolean}}]}, {test: RegExp, use: string[], exclude: RegExp[]}, null, null]}})}}
  */
-const buildAppPair = ({main, dist, root, template, publicPath, port, vendors = [], copy = []}, packages) => ({
+const buildAppPair = (
+    {
+        main, dist, root, template,
+        publicPath,
+        port,
+        vendors = [],
+        copy = [],
+        plugins = [],
+    },
+    packages,
+) => ({
     dist,
     serve: () => getConfig(
         merge(
-            buildAppConfig(main, dist, root, template), {
+            buildAppConfig(main, dist, root, template),
+            {
                 mode: 'development',
                 entry: {
                     vendors,
@@ -147,17 +156,16 @@ const buildAppPair = ({main, dist, root, template, publicPath, port, vendors = [
                 },
                 plugins: [
                     ...(copy.length ? [new CopyPlugin({patterns: copy})] : []),
+                    ...plugins,
                 ],
                 //devtool: 'eval-cheap-module-source-map',// faster rebuild, not for production
                 devtool: 'cheap-module-source-map',// slow build, for production
             },
-        ), {
+        ),
+        {
             context: root,
             minimize: false,
             include: [
-                /*Object.values(packages).map(({root}) =>
-                    path.resolve(root, 'es')
-                ),*/
                 Object.values(packages).map(({root}) =>
                     path.resolve(root, 'src'),
                 ),
@@ -166,7 +174,8 @@ const buildAppPair = ({main, dist, root, template, publicPath, port, vendors = [
     ),
     build: () => getConfig(
         merge(
-            buildAppConfig(main, dist, root, template), {
+            buildAppConfig(main, dist, root, template),
+            {
                 mode: 'production',
                 entry: {
                     vendors,
@@ -187,13 +196,15 @@ const buildAppPair = ({main, dist, root, template, publicPath, port, vendors = [
                             ...copy,
                         ],
                     }),
+                    ...plugins,
                     // Inlines the webpack runtime script. This script is too small to warrant
                     // a network request.
                     // https://github.com/facebook/create-react-app/issues/5358
                     new InlineChunkHtmlPlugin(HtmlWebpackPlugin, [/runtime-.+[.]js/]),
                 ],
             },
-        ), {
+        ),
+        {
             context: root,
             minimize: true,
         },

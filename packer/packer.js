@@ -1,27 +1,27 @@
-const fs = require('fs');
-const path = require('path');
-const argv = require('minimist')(process.argv.slice(2));
-const {delDir} = require('./tools');
-const {buildEsModules} = require('./babel');
-const {buildWebpack, serveWebpack} = require('./webpack');
-const {buildAppPair} = require('./webpack.apps');
+const fs = require('fs')
+const path = require('path')
+const argv = require('minimist')(process.argv.slice(2))
+const {delDir} = require('./tools')
+const {buildEsModules} = require('./babel')
+const {buildWebpack, serveWebpack} = require('./webpack')
+const {buildAppPair} = require('./webpack.apps')
 
 const packer = (apps, packages, root, babelTargets = undefined) => {
-    const doServe = argv['serve'] === true ? true : (argv['serve'] || false);
-    const doClean = !!argv['clean'];
-    const doBuild = !!argv['build'];
-    const doBuildBabel = !!argv['babel'];
-    const doBuildWebpack = !!argv['webpack'];
-    const withProfile = !!argv['profile'];
+    const doServe = argv['serve'] === true ? true : (argv['serve'] || false)
+    const doClean = !!argv['clean']
+    const doBuild = !!argv['build']
+    const doBuildBabel = !!argv['babel']
+    const doBuildWebpack = !!argv['webpack']
+    const withProfile = !!argv['profile']
 
-    const appsConfigs = {};
+    const appsConfigs = {}
     for(let app in apps) {
-        appsConfigs[app] = buildAppPair(apps[app], packages);
+        appsConfigs[app] = buildAppPair(apps[app], packages)
     }
 
     if(doBuildWebpack || doServe) {
-        const webpackPartialRoot = path.join(root, '/packages');
-        const webpackPartialFile = path.join(webpackPartialRoot, 'webpackPartialConfig.js');
+        const webpackPartialRoot = path.join(root, '/packages')
+        const webpackPartialFile = path.join(webpackPartialRoot, 'webpackPartialConfig.js')
         const webpackPartial = `
 const path = require('path');
 
@@ -29,15 +29,15 @@ module.exports = {
     resolve: {
         alias: {
             ${Object.values(packages).reduce((aliases, {name, entry}) =>
-            aliases + "'" + [name] + "': path.resolve(__dirname, '." + entry.replace(webpackPartialRoot, '').replace(/\\/g, '/') + "'),\r\n"
+                aliases + '\'' + [name] + '\': path.resolve(__dirname, \'.' + entry.replace(webpackPartialRoot, '').replace(/\\/g, '/') + '\'),\r\n'
             , '')}
         }
     }
-}`;
+}`
         fs.writeFile(webpackPartialFile, webpackPartial, err => {
-            if(err) return console.error(err);
+            if(err) return console.error(err)
             console.log('Updated webpackPartial.config.json')
-        });
+        })
     }
 
     if(doClean) {
@@ -45,21 +45,21 @@ module.exports = {
 
         // todo: a `lerna bootstrap --hoist` is needed afterwards, rimraf seems to break node_modules symlinking
 
-        const promises = [];
+        const promises = []
 
         for(let app in apps) {
-            promises.push(delDir(apps[app].dist));
+            promises.push(delDir(apps[app].dist))
         }
 
         // todo: lib/es should be like configured
         Object.values(packages).forEach(({name, noClean, root}) => {
             if(noClean) {
                 console.log('Skip deleting build of ' + name)
-                return;
+                return
             }
 
-            let pack_mod = path.resolve(root, 'build');
-            promises.push(delDir(pack_mod));
+            let pack_mod = path.resolve(root, 'build')
+            promises.push(delDir(pack_mod))
 
             /*let pack_mod = path.resolve(pack, 'lib');
             promises.push(delDir(pack_mod));
@@ -69,56 +69,56 @@ module.exports = {
             Promise.all(promises)
                 .then((e) => e.length === promises.length ?
                     promises.length ? console.log('deleted all dists!') : console.log('no dists exists.')
-                    : undefined);
+                    : undefined)
         })
     }
 
     if(doBuild) {
         // production build
 
-        const packagesNames = Object.keys(packages);
-        console.log('Production build');
+        const packagesNames = Object.keys(packages)
+        console.log('Production build')
         new Promise((resolve) => {
             if(!doBuildBabel) return resolve()
-            console.log('Starting ES6 build for ' + packagesNames.length + ' modules: `' + packagesNames.join(', ') + '`');
+            console.log('Starting ES6 build for ' + packagesNames.length + ' modules: `' + packagesNames.join(', ') + '`')
             buildEsModules(packages, babelTargets)
                 .then(() => resolve())
                 .catch(err => {
-                    console.error(err);
-                    process.exit(1);
-                });
+                    console.error(err)
+                    process.exit(1)
+                })
         })
             .then(() => {
-                if(!doBuildWebpack) return;
-                console.log('');
-                console.log('Starting webpack build for apps `' + (Object.keys(apps).join(', ')) + '`');
+                if(!doBuildWebpack) return
+                console.log('')
+                console.log('Starting webpack build for apps `' + (Object.keys(apps).join(', ')) + '`')
                 // combine configs to build demo apps
-                const configs = [];
+                const configs = []
                 for(let app in apps) {
                     if(!appsConfigs[app].build) {
-                        console.error('App has no serve config: ', app);
-                        process.exit(1);
+                        console.error('App has no serve config: ', app)
+                        process.exit(1)
                     }
 
                     if(typeof appsConfigs[app].build === 'function') {
-                        appsConfigs[app].build = appsConfigs[app].build();
+                        appsConfigs[app].build = appsConfigs[app].build()
                     }
 
                     if(typeof appsConfigs[app].build !== 'object') {
-                        console.error('App has invalid serve config: ', app, appsConfigs[app].build);
-                        process.exit(1);
+                        console.error('App has invalid serve config: ', app, appsConfigs[app].build)
+                        process.exit(1)
                     }
 
-                    configs.push(appsConfigs[app].build);
+                    configs.push(appsConfigs[app].build)
                 }
 
                 configs.forEach((c) => {
                     // check created webpack configs, e.g.:
                     // console.log(c.module.rules);
                     // console.log(Object.keys(c.entry));
-                });
-                configs.profile = withProfile;
-                buildWebpack(configs, root);
+                })
+                configs.profile = withProfile
+                buildWebpack(configs, root)
             })
     }
 
@@ -141,20 +141,20 @@ module.exports = {
             process.exit(1);
         }*/
 
-        if(doServe === true) console.log('Starting all Apps:');
-        else console.log('Starting App `' + doServe + '`:');
+        if(doServe === true) console.log('Starting all Apps:')
+        else console.log('Starting App `' + doServe + '`:')
 
-        let doServers = doServe !== true ? (Array.isArray(doServe) ? doServe : [doServe]) : false;
-        let servers = [];
+        let doServers = doServe !== true ? (Array.isArray(doServe) ? doServe : [doServe]) : false
+        let servers = []
         for(let app in apps) {
             if(Array.isArray(doServers) && doServers.indexOf(app) === -1) {
-                continue;
+                continue
             }
             if(appsConfigs[app].serve) {
                 if(typeof appsConfigs[app].serve === 'function') {
-                    appsConfigs[app].serve = appsConfigs[app].serve();
+                    appsConfigs[app].serve = appsConfigs[app].serve()
                 }
-                servers.push(serveWebpack(appsConfigs[app].serve));
+                servers.push(serveWebpack(appsConfigs[app].serve))
             }
         }
 

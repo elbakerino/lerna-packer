@@ -62,7 +62,8 @@ function getConfig(
                             compact: minimize,
                         },
                     }],
-                }, {
+                }, /*{
+                    // todo: fix deps presets, couldn't get it to work with lerna hoist
                     // Process any JS outside of the app with Babel.
                     // Unlike the application JS, we only compile the standard ES features.
                     test: /\.(js|mjs)$/,
@@ -91,9 +92,10 @@ function getConfig(
                         // being evaluated would be much more helpful.
                         sourceMaps: false,
                     },
-                }, {
+                }, */{
                     test: /\.html$/i,
-                    // exclude: [/node_modules/],
+                    // todo `manifest.json` in `public/index.html` isn't loading with these loaders
+                    exclude: [/public/],
                     use: [{
                         loader: 'ejs-loader',
                         options: {
@@ -134,52 +136,54 @@ function getConfig(
         },
         optimization: {
             minimize: minimize,
-            minimizer: [new TerserPlugin({
-                terserOptions: {
-                    parse: {
-                        // We want terser to parse ecma 8 code. However, we don't want it
-                        // to apply any minification steps that turns valid ecma 5 code
-                        // into invalid ecma 5 code. This is why the 'compress' and 'output'
-                        // sections only apply transformations that are ecma 5 safe
-                        // https://github.com/facebook/create-react-app/pull/4234
-                        ecma: 8,
+            minimizer: [
+                new TerserPlugin({
+                    terserOptions: {
+                        parse: {
+                            // We want terser to parse ecma 8 code. However, we don't want it
+                            // to apply any minification steps that turns valid ecma 5 code
+                            // into invalid ecma 5 code. This is why the 'compress' and 'output'
+                            // sections only apply transformations that are ecma 5 safe
+                            // https://github.com/facebook/create-react-app/pull/4234
+                            ecma: 8,
+                        },
+                        compress: {
+                            ecma: 5,
+                            warnings: false,
+                            // Disabled because of an issue with Uglify breaking seemingly valid code:
+                            // https://github.com/facebook/create-react-app/issues/2376
+                            // Pending further investigation:
+                            // https://github.com/mishoo/UglifyJS2/issues/2011
+                            comparisons: false,
+                            // Disabled because of an issue with Terser breaking valid code:
+                            // https://github.com/facebook/create-react-app/issues/5250
+                            // Pending further investigation:
+                            // https://github.com/terser-js/terser/issues/120
+                            inline: 2,
+                        },
+                        mangle: {
+                            safari10: true,
+                        },
+                        // Added for profiling in devtools
+                        keep_classnames: false,
+                        keep_fnames: false,
+                        /*keep_classnames: isEnvProductionProfile,
+                        keep_fnames: isEnvProductionProfile,*/
+                        output: {
+                            ecma: 5,
+                            comments: false,
+                            // Turned on because emoji and regex is not minified properly using default
+                            // https://github.com/facebook/create-react-app/issues/2488
+                            ascii_only: true,
+                        },
                     },
-                    compress: {
-                        ecma: 5,
-                        warnings: false,
-                        // Disabled because of an issue with Uglify breaking seemingly valid code:
-                        // https://github.com/facebook/create-react-app/issues/2376
-                        // Pending further investigation:
-                        // https://github.com/mishoo/UglifyJS2/issues/2011
-                        comparisons: false,
-                        // Disabled because of an issue with Terser breaking valid code:
-                        // https://github.com/facebook/create-react-app/issues/5250
-                        // Pending further investigation:
-                        // https://github.com/terser-js/terser/issues/120
-                        inline: 2,
-                    },
-                    mangle: {
-                        safari10: true,
-                    },
-                    // Added for profiling in devtools
-                    keep_classnames: false,
-                    keep_fnames: false,
-                    /*keep_classnames: isEnvProductionProfile,
-                    keep_fnames: isEnvProductionProfile,*/
-                    output: {
-                        ecma: 5,
-                        comments: false,
-                        // Turned on because emoji and regex is not minified properly using default
-                        // https://github.com/facebook/create-react-app/issues/2488
-                        ascii_only: true,
-                    },
-                },
-                // Use multi-process parallel running to improve the build speed
-                // Default number of concurrent runs: os.cpus().length - 1
-                // Disabled on WSL (Windows Subsystem for Linux) due to an issue with Terser
-                // https://github.com/webpack-contrib/terser-webpack-plugin/issues/21
-                parallel: !isWsl,
-            })],
+                    // Use multi-process parallel running to improve the build speed
+                    // Default number of concurrent runs: os.cpus().length - 1
+                    // Disabled on WSL (Windows Subsystem for Linux) due to an issue with Terser
+                    // https://github.com/webpack-contrib/terser-webpack-plugin/issues/21
+                    parallel: !isWsl,
+                }),
+            ],
         },
     }
 

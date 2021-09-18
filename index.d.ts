@@ -1,12 +1,17 @@
+import { Configuration } from 'webpack'
+
+export { webpack, Configuration } from 'webpack'
+
 export interface AppsConfig {
     root: string
     template: string
     publicPath: string
     port: number
-    main: string,
-    dist: string,
+    main: string | string[]
+    dist: string
     servedPath: string
     vendors: string[]
+    plugins: Configuration['plugins'][]
 }
 
 export interface PackageConfig {
