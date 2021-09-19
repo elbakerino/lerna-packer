@@ -192,7 +192,15 @@ const buildAppPair = (
                 plugins: [
                     new CopyPlugin({
                         patterns: [
-                            {from: publicPath, to: dist},
+                            {
+                                from: publicPath,
+                                to: dist,
+                                globOptions: {
+                                    ignore: [
+                                        ...(template.indexOf(publicPath) === 0 ? ['**/' + template.substr(publicPath.length + 1).replace(/\\/g, '/')] : []),
+                                    ],
+                                },
+                            },
                             ...copy,
                         ],
                     }),

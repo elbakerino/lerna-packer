@@ -1,7 +1,14 @@
 {
     "name": "lerna-packer",
-    "version": "0.2.7",
-    "description": "",
+    "version": "0.2.8",
+    "description": "React multi-app and package build handling for lerna monorepo.",
+    "keywords": [
+        "lerna",
+        "webpack",
+        "webpack5",
+        "react",
+        "monorepo"
+    ],
     "typings": "./index.d.ts",
     "main": "index.js",
     "scripts": {},

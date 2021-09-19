@@ -9,11 +9,13 @@ React multi-app and package build handling for [lerna](https://github.com/lerna/
 
 **Packages**: publishable packages, can be used by apps directly, production built with babel.
 
-**Supports**: ESNext, React, TypeScript, d.ts Generation, Sass, Code Split compatible, es-modules and commonjs, Jest and Testing Library, ... 
+**Supports**: ESNext, React, TypeScript, d.ts Generation, Sass, Code Split compatible, es-modules and commonjs, Jest and Testing Library, ...
 
     npm init
     npm i --save lerna lerna-packer
-    
+
+> **experimental**, fix the version without any modifier
+
 Add `packerConfig.js` with configs for apps and packages (component libraries):
 
 ```js
@@ -29,7 +31,8 @@ const apps = {
         main: path.resolve(__dirname, 'packages', '_docs-control/src/index.tsx'),
         dist: path.resolve(__dirname, 'dist', 'docs-control'),
         servedPath: '/', // todo: make package.json homepage dependent
-        vendors: []
+        vendors: [],
+        plugins: [],
     },
 };
 
@@ -189,7 +192,7 @@ This project is free software distributed under the **MIT License**.
 
 See: [LICENSE](LICENSE).
 
-© 2020 [Michael Becker](https://mlbr.xyz)
+© 2021 [Michael Becker](https://mlbr.xyz)
 
 ### Contributors
 
