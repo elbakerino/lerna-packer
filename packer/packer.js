@@ -2,16 +2,27 @@ const fs = require('fs')
 const path = require('path')
 const argv = require('minimist')(process.argv.slice(2))
 const {delDir} = require('./tools')
-const {buildEsModules} = require('./babel')
+const {buildEsModules} = require('./babelEsModules')
+const {buildNodePackage} = require('./babelNodePackage')
+const {startNodemon} = require('./nodemon')
 const {buildWebpack, serveWebpack} = require('./webpack')
 const {buildAppPair} = require('./webpack.apps')
 
-const packer = (apps, packages, root, babelTargets = undefined) => {
+const packer = (
+    {
+        apps = {},
+        packages = {},
+        backends = {},
+    },
+    root,
+    babelTargets = undefined,
+) => {
     const doServe = argv['serve'] === true ? true : (argv['serve'] || false)
     const doClean = !!argv['clean']
     const doBuild = !!argv['build']
-    const doBuildBabel = !!argv['babel']
-    const doBuildWebpack = !!argv['webpack']
+    const doBuildBabel = doBuild && !!argv['babel']
+    const doBuildBackend = doBuild && !!argv['backend']
+    const doBuildWebpack = doBuild && !!argv['webpack']
     const withProfile = !!argv['profile']
 
     const appsConfigs = {}
@@ -50,6 +61,9 @@ module.exports = {
         for(let app in apps) {
             promises.push(delDir(apps[app].dist))
         }
+        for(let backend in backends) {
+            promises.push(delDir(backends[backend].root + '/build'))
+        }
 
         // todo: lib/es should be like configured
         Object.values(packages).forEach(({name, noClean, root}) => {
@@ -73,74 +87,90 @@ module.exports = {
         })
     }
 
-    if(doBuild) {
+    if(doBuildBabel || doBuildWebpack) {
         // production build
 
         const packagesNames = Object.keys(packages)
         console.log('Production build')
-        new Promise((resolve) => {
-            if(!doBuildBabel) return resolve()
-            console.log('Starting ES6 build for ' + packagesNames.length + ' modules: `' + packagesNames.join(', ') + '`')
+        if(doBuildBabel) {
+            console.log('Starting ES build for ' + packagesNames.length + ' modules: `' + packagesNames.join(', ') + '`')
             buildEsModules(packages, babelTargets)
-                .then(() => resolve())
+                .then(() => null)
                 .catch(err => {
                     console.error(err)
                     process.exit(1)
                 })
-        })
-            .then(() => {
-                if(!doBuildWebpack) return
-                console.log('')
-                console.log('Starting webpack build for apps `' + (Object.keys(apps).join(', ')) + '`')
-                // combine configs to build demo apps
-                const configs = []
-                for(let app in apps) {
-                    if(!appsConfigs[app].build) {
-                        console.error('App has no serve config: ', app)
-                        process.exit(1)
-                    }
+        }
 
-                    if(typeof appsConfigs[app].build === 'function') {
-                        appsConfigs[app].build = appsConfigs[app].build()
-                    }
-
-                    if(typeof appsConfigs[app].build !== 'object') {
-                        console.error('App has invalid serve config: ', app, appsConfigs[app].build)
-                        process.exit(1)
-                    }
-
-                    configs.push(appsConfigs[app].build)
+        if(doBuildWebpack) {
+            console.log('')
+            console.log('Starting webpack build for apps `' + (Object.keys(apps).join(', ')) + '`')
+            // combine configs to build demo apps
+            const configs = []
+            for(let app in apps) {
+                if(!appsConfigs[app].build) {
+                    console.error('App has no serve config: ', app)
+                    process.exit(1)
                 }
 
-                configs.forEach((c) => {
-                    // check created webpack configs, e.g.:
-                    // console.log(c.module.rules);
-                    // console.log(Object.keys(c.entry));
-                })
-                configs.profile = withProfile
-                buildWebpack(configs, root)
+                if(typeof appsConfigs[app].build === 'function') {
+                    appsConfigs[app].build = appsConfigs[app].build()
+                }
+
+                if(typeof appsConfigs[app].build !== 'object') {
+                    console.error('App has invalid serve config: ', app, appsConfigs[app].build)
+                    process.exit(1)
+                }
+
+                configs.push(appsConfigs[app].build)
+            }
+
+            configs.forEach((c) => {
+                // check created webpack configs, e.g.:
+                // console.log(c.module.rules);
+                // console.log(Object.keys(c.entry));
+            })
+            configs.profile = withProfile
+            buildWebpack(configs, root)
+        }
+    }
+
+    const backendsQty = Object.keys(backends).length
+    if(backendsQty && (doBuildBackend || doServe)) {
+        console.log(
+            (doBuildBackend ? 'Building backends:' : 'Start serving backends:') + ' ' +
+            Object.keys(backends).join(', '),
+        )
+        const backendPromises = []
+        for(let backend in backends) {
+            backendPromises.push(
+                buildNodePackage(
+                    backend,
+                    backends[backend].root,
+                    backends[backend].src,
+                    doServe,
+                ),
+            )
+            if(doServe) {
+                backendPromises.push(
+                    startNodemon(
+                        backend,
+                        backends[backend].root,
+                        backends[backend].entry,
+                    ),
+                )
+            }
+        }
+        Promise.all(backendPromises)
+            .then(() => {
+                console.log('Finished `' + backendsQty + '` backends')
+            })
+            .catch((e) => {
+                console.error('Failed at backends', e)
             })
     }
 
     if(doServe) {
-        /*if(!apps[serveId]) {
-            console.error('App not existing: ' + serveId, 'Existing Apps:', Object.keys(apps));
-            process.exit(1);
-        }
-        if(!appsConfigs[serveId].serve) {
-            console.error('App has no serve config: ', serveId);
-            process.exit(1);
-        }
-
-        if(typeof appsConfigs[serveId].serve === 'function') {
-            appsConfigs[serveId].serve = appsConfigs[serveId].serve();
-        }
-
-        if(typeof appsConfigs[serveId].serve !== 'object') {
-            console.error('App has invalid serve config: ', serveId, appsConfigs[serveId].serve);
-            process.exit(1);
-        }*/
-
         if(doServe === true) console.log('Starting all Apps:')
         else console.log('Starting App `' + doServe + '`:')
 

@@ -1,34 +1,34 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('fs')
+const path = require('path')
 
 const scanner = function(dir, exclude = [], {onDir = () => null, onFile = () => null}, level = 0) {
     fs.readdir(dir, (err, list) => {
         list.forEach(function(file) {
-            file = path.resolve(dir, file);
+            file = path.resolve(dir, file)
             fs.stat(file, function(err, stat) {
                 if(stat && stat.isDirectory()) {
                     if(exclude.includes(file)) {
-                        return;
+                        return
                     }
-                    onDir(file, level);
-                    scanner(file, exclude, {onDir, onFile}, level + 1);
+                    onDir(file, level)
+                    scanner(file, exclude, {onDir, onFile}, level + 1)
                 } else {
                     onFile(file)
                 }
-            });
-        });
-    });
-};
+            })
+        })
+    })
+}
 
 const fileExists = (path, onExists, onMissing) => {
     fs.stat(path, (err) => {
         if(err == null) {
-            onExists();
+            onExists()
         } else if(err.code === 'ENOENT') {
-            onMissing();
+            onMissing()
         }
-    });
-};
+    })
+}
 
 /**
  * Puts a package.json into every child directory of root.
@@ -42,7 +42,7 @@ const fileExists = (path, onExists, onMissing) => {
  * @param {string} root
  */
 exports.createModulePackages = function createModulePackages(root) {
-    const actions = [];
+    const actions = []
     scanner(root, [path.resolve(root, 'esm')], {
         onDir: (dir, level) => {
             actions.push(new Promise(((resolve) => {
@@ -54,17 +54,17 @@ exports.createModulePackages = function createModulePackages(root) {
                             module: path.join('../'.repeat(level + 1) + 'esm', path.basename(dir), 'index.js').replace(/\\/g, '/'),
                             typings: './index.d.ts',
                         }, null, 4), () => {
-                            resolve();
+                            resolve()
                         })
                     },
                     () => {
                         // todo: switch to errors on `.d.ts` enabled packages
-                        console.warn('#! index.js missing in: ' + dir);
-                        resolve();
-                    }
+                        console.warn('#! index.js missing in: ' + dir)
+                        resolve()
+                    },
                 )
             })))
-        }
+        },
     })
 
     return Promise.all(actions)

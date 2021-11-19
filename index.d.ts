@@ -14,6 +14,12 @@ export interface AppsConfig {
     plugins: Configuration['plugins'][]
 }
 
+export interface BackendConfig {
+    root: string
+    src: string
+    entry: string
+}
+
 export interface PackageConfig {
     name: string
     root: string
@@ -23,9 +29,14 @@ export interface PackageConfig {
     }
 }
 
+export interface PackerTargets {
+    apps: { [key: string]: AppsConfig }
+    backends: { [key: string]: BackendConfig }
+    packages: { [key: string]: PackageConfig }
+}
+
 export function packer(
-    apps: { [key: string]: AppsConfig },
-    packages: { [key: string]: PackageConfig },
+    targets: Partial<PackerTargets>,
     // absolute folder for e.g. profiling output
     root: string,
     // custom babel targets, `args` are passed to all pure-babel processes

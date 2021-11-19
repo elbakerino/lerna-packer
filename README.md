@@ -3,9 +3,11 @@
 [![MIT license](https://img.shields.io/npm/l/@ui-schema/ui-schema?style=flat-square)](https://github.com/ui-schema/ui-schema/blob/master/LICENSE)
 [![npm (scoped)](https://img.shields.io/npm/v/lerna-packer?style=flat-square)](https://www.npmjs.com/package/lerna-packer)
 
-React multi-app and package build handling for [lerna](https://github.com/lerna/lerna) monorepo.
+React multi-app and package build handling for [lerna](https://github.com/lerna/lerna) monorepos.
 
 **App**: webpack serving and building, scss/css support, public folder etc. - similar to create-react apps.
+
+**Backends**: NodeJS backend server, building/watching with babel and serving with nodemon.
 
 **Packages**: publishable packages, can be used by apps directly, production built with babel.
 
@@ -36,6 +38,14 @@ const apps = {
     },
 };
 
+const backends = {
+    someApi: {
+        root: path.resolve(__dirname, 'packages', 'some-api'),
+        src: 'src',
+        entry: 'server.js',
+    },
+};
+
 const packages = {
     // the keys are the commonjs names that is applied to externals
     // this is the same as `@babel/plugin-transform-modules-commonjs` applies
@@ -63,7 +73,11 @@ const packages = {
     },
 };
 
-packer(apps, packages, __dirname);
+packer(
+    // apps and packages are required, backends are optional
+    {apps, backends, packages},
+    __dirname
+);
 ```
 
 Add scripts to `package.json`:
@@ -74,8 +88,9 @@ Add scripts to `package.json`:
         "start": "npm run clean-dist && npm run hoist && npm run serve",
         "serve": "cross-env NODE_ENV=development node packerConfig.js --serve",
         "prebuild": "npm run clean-dist && npm run hoist",
-        "build": "npm run build-babel && npm run build-webpack && npm run dtsgen",
+        "build": "npm run build-babel && npm run build-backend && npm run dtsgen && npm run build-webpack",
         "build-babel": "cross-env NODE_ENV=production CI=true node packerConfig.js --build --babel",
+        "build-backend": "cross-env NODE_ENV=production CI=true node packerConfig.js --build --backend",
         "build-webpack": "cross-env NODE_ENV=production CI=true node packerConfig.js --build --webpack",
         "clean": "npm run clean-dist && lerna clean -y",
         "clean-dist": "node packerConfig.js --clean",
@@ -167,6 +182,28 @@ Add `babel.config.json` or similiar:
             "plugins": [
                 "@babel/plugin-transform-modules-commonjs"
             ]
+        },
+        "node": {
+            "presets": [
+                [
+                    "@babel/preset-env",
+                    {
+                        "targets": {
+                            "node": "14"
+                        },
+                        "modules": false
+                    }
+                ],
+                [
+                    "@babel/preset-typescript",
+                    {
+                        "targets": {
+                            "node": "14"
+                        },
+                        "modules": false
+                    }
+                ]
+            ]
         }
     }
 }
@@ -180,6 +217,9 @@ Add the following part into `package.json` for fatal errors on warnings for esli
         "cliOptions": {
             "maxWarnings": 0
         }
+    },
+    "nodemonConfig": {
+        "delay": 120
     }
 }
 ```
