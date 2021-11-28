@@ -27,7 +27,7 @@ const spawnNodemon = (args) => {
     return spawn(path, args)
 }
 
-function startNodemon(name, root, entry) {
+function startNodemon(name, root, entry, experimental = {}) {
     return new Promise((resolve, reject) => {
         const buildDir = path.resolve(root, 'build')
         if(!fs.existsSync(buildDir)) {
@@ -40,7 +40,32 @@ function startNodemon(name, root, entry) {
             }
         })
 
-        const args = ['--experimental-json-modules', '-w', path.resolve(root, 'build'), serverFile]
+        const args = []
+        if(experimental.jsonModules) {
+            args.push('--experimental-json-modules')
+        }
+        if(experimental.report) {
+            args.push('--experimental-report')
+        }
+        if(experimental.reportUncaughtException) {
+            args.push('--diagnostic-report-uncaught-exception')
+        }
+        if(experimental.reportOnSignal) {
+            args.push('--diagnostic-report-on-signal' + (typeof experimental.reportOnSignal === 'string' ? experimental.reportOnSignal : ''))
+        }
+        if(experimental.reportOnFatalError) {
+            args.push('--diagnostic-report-on-fatalerror')
+        }
+        if(experimental.reportDirectory) {
+            args.push('--diagnostic-report-directory=' + experimental.reportDirectory)
+        }
+        if(experimental.reportFilename) {
+            args.push('--diagnostic-report-filename=' + experimental.reportFilename)
+        }
+        if(experimental.policy) {
+            args.push('--experimental-policy=' + experimental.policy)
+        }
+        args.push('-w', path.resolve(root, 'build'), serverFile)
         let nodemon = spawnNodemon(args)
         nodemon.stdout.on('data', (data) => {
             process.stdout.write(`[${name}, nodemon] ${data}`)

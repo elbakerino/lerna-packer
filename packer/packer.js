@@ -157,6 +157,7 @@ module.exports = {
                         backend,
                         backends[backend].root,
                         backends[backend].entry,
+                        backends[backend].nodeExperimental,
                     ),
                 )
             }

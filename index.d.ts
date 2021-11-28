@@ -18,6 +18,25 @@ export interface BackendConfig {
     root: string
     src: string
     entry: string
+    nodeExperimental?: {
+        // `--experimental-json-modules`
+        jsonModules?: boolean
+        // `--experimental-report`
+        report?: boolean
+        // `--diagnostic-report-uncaught-exception`
+        reportUncaughtException?: boolean
+        // `--diagnostic-report-on-signal`
+        // `--diagnostic-report-on-signal=<string?`
+        reportOnSignal?: boolean | string
+        // `--diagnostic-report-on-fatalerror`
+        reportOnFatalError?: boolean
+        // `--diagnostic-report-directory=<string>`
+        reportDirectory?: string
+        // `--diagnostic-report-filename=<string>`
+        reportFilename?: string
+        // `--experimental-policy=<string>`
+        policy?: string
+    }
 }
 
 export interface PackageConfig {
