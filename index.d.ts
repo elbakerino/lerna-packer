@@ -11,6 +11,9 @@ export interface AppsConfig {
     dist: string
     servedPath: string
     vendors: string[]
+    // passed to the webpack `CopyPlugin`
+    copy: { from: string, to: string }[]
+    // extra plugins for webpack
     plugins: Configuration['plugins'][]
 }
 
