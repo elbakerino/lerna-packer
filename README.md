@@ -22,17 +22,17 @@ Add `packerConfig.js` with configs for apps and packages (component libraries):
 
 ```js
 const path = require('path');
-const {buildExternal, packer} = require('lerna-packer');
+const {packer} = require('lerna-packer');
 
 const apps = {
     docs: {
         root: path.resolve(__dirname, 'packages', '_docs-control'),
         template: path.resolve(__dirname, 'packages', '_docs-control/public/index.html'),
-        publicPath: path.resolve(__dirname, 'packages', '_docs-control/public'),// dev-server
+        contentBase: path.resolve(__dirname, 'packages', '_docs-control/public'),// dev-server
         port: 9219,
         main: path.resolve(__dirname, 'packages', '_docs-control/src/index.tsx'),
         dist: path.resolve(__dirname, 'dist', 'docs-control'),
-        servedPath: '/', // todo: make package.json homepage dependent
+        publicPath: '/',
         vendors: [],
         plugins: [],
     },
@@ -53,23 +53,11 @@ const packages = {
         name: '@control-ui/kit',
         root: path.resolve(__dirname, 'packages', 'control-kit'),
         entry: path.resolve(__dirname, 'packages', 'control-kit/src/'),
-        externals: {
-            react: buildExternal("react"),
-            "react-dom": buildExternal("react-dom"),
-            "@material-ui/core": buildExternal("@material-ui/core"),
-            "@material-ui/icons": buildExternal("@material-ui/icons"),
-        }
     },
     controlApp: {
         name: '@control-ui/app',
         root: path.resolve(__dirname, 'packages', 'control-app'),
         entry: path.resolve(__dirname, 'packages', 'control-app/src/'),
-        externals: {
-            react: buildExternal("react"),
-            "react-dom": buildExternal("react-dom"),
-            "@material-ui/core": buildExternal("@material-ui/core"),
-            "@material-ui/icons": buildExternal("@material-ui/icons"),
-        }
     },
 };
 
@@ -224,7 +212,13 @@ Add the following part into `package.json` for fatal errors on warnings for esli
 }
 ```
 
-Add `.eslintrc`, `tsconfig.json`, `jest.config.js` in root/packages/package-dirs like wanted, example in e.g. [UI Schema](https://github.com/ui-schema/ui-schema)
+Add `.eslintrc`, `tsconfig.json`, `jest.config.js` in root/packages/package-dirs like wanted.
+
+Used by, check the `packerConfig.js` there:
+
+- [UI Schema](https://github.com/ui-schema/ui-schema)
+- [Control UI](https://github.com/control-ui/control-ui)
+- [Icon1](https://github.com/bemit/icon1), incl. `backends`
 
 ## License
 

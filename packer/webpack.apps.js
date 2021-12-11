@@ -108,7 +108,13 @@ const buildAppConfig = (main, dist, root, template) => ({
  * @param dist
  * @param root
  * @param template
+ * @param contentBase
  * @param publicPath
+ * @param devServer
+ * @param devtoolServe
+ * @param devtoolBuild
+ * @param runtimeChunkServe
+ * @param runtimeChunkBuild
  * @param port
  * @param vendors
  * @param copy
@@ -119,8 +125,14 @@ const buildAppConfig = (main, dist, root, template) => ({
 const buildAppPair = (
     {
         main, dist, root, template,
+        contentBase,
         publicPath,
         port,
+        devServer,
+        devtoolServe,
+        devtoolBuild,
+        runtimeChunkServe,
+        runtimeChunkBuild,
         vendors = [],
         copy = [],
         plugins = [],
@@ -143,23 +155,42 @@ const buildAppPair = (
                     }, {}),
                 },
                 devServer: {
-                    contentBase: publicPath,
-                    publicPath: '/',
+                    static: devServer && typeof devServer.static === 'object' ? {
+                        ...devServer.static,
+                        directory: contentBase,
+                    } : [
+                        {
+                            directory: contentBase,
+                        },
+                        ...(devServer.static || []),
+                    ],
+                    client: {
+                        logging: devServer && devServer.client && devServer.client.logging ? devServer.client.logging : 'info',
+                        overlay: devServer && devServer.client && devServer.client.overlay ? devServer.client.overlay : undefined,
+                        progress: devServer && devServer.client && devServer.client.progress ? devServer.client.progress : undefined,
+                    },
+                    host: devServer && devServer.host ? devServer.host : undefined,
+                    headers: devServer && devServer.headers ? devServer.headers : undefined,
+                    open: devServer && devServer.open ? devServer.open : undefined,
+                    proxy: devServer && devServer.proxy ? devServer.proxy : undefined,
+                    publicPath: publicPath || '/',
                     compress: true,
-                    inline: true,
-                    hot: true,
-                    historyApiFallback: true,
+                    hot: devServer && typeof devServer.hot !== 'undefined' ? devServer.hot : true,
+                    http2: devServer && typeof devServer.http2 !== 'undefined' ? devServer.http2 : true,
+                    https: devServer && typeof devServer.https !== 'undefined' ? devServer.https : true,
+                    magicHtml: devServer && typeof devServer.magicHtml !== 'undefined' ? devServer.magicHtml : true,
+                    historyApiFallback: devServer && typeof devServer.historyApiFallback !== 'undefined' ? devServer.historyApiFallback : true,
                     port: port,
                 },
                 optimization: {
-                    runtimeChunk: 'single',
+                    runtimeChunk: typeof runtimeChunkServe !== 'undefined' ? runtimeChunkServe : 'single',
                 },
                 plugins: [
                     ...(copy.length ? [new CopyPlugin({patterns: copy})] : []),
                     ...plugins,
                 ],
                 //devtool: 'eval-cheap-module-source-map',// faster rebuild, not for production
-                devtool: 'cheap-module-source-map',// slow build, for production
+                devtool: devtoolServe || 'cheap-module-source-map',// slow build, for production
             },
         ),
         {
@@ -187,17 +218,18 @@ const buildAppPair = (
                     }, {}),
                 },
                 optimization: {
-                    runtimeChunk: 'single',
+                    runtimeChunk: typeof runtimeChunkBuild !== 'undefined' ? runtimeChunkBuild : 'single',
                 },
+                devtool: devtoolBuild,
                 plugins: [
                     new CopyPlugin({
                         patterns: [
                             {
-                                from: publicPath,
+                                from: contentBase,
                                 to: dist,
                                 globOptions: {
                                     ignore: [
-                                        ...(template.indexOf(publicPath) === 0 ? ['**/' + template.substr(publicPath.length + 1).replace(/\\/g, '/')] : []),
+                                        ...(template.indexOf(contentBase) === 0 ? ['**/' + template.substr(contentBase.length + 1).replace(/\\/g, '/')] : []),
                                     ],
                                 },
                             },
