@@ -14,16 +14,11 @@ function serveWebpack(config) {
         console.error('DevServer is not defined!')
         process.exit(1)
     }
-    const options = {...config.devServer}
-    options.stats = {
-        colors: true,
-        modules: false,
-    } // or: 'minimal'
 
     console.log('Starting Webpack Dev-Server...')
 
     return new Promise((resolve, reject) => {
-        const server = new WebpackDevServer(webpack(config), options)
+        const server = new WebpackDevServer(webpack(config), config.devServer)
 
         server.listen(config.devServer.port, 'localhost', function(err) {
             if(err) {

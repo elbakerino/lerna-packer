@@ -5,11 +5,11 @@
 
 React multi-app and package build handling for [lerna](https://github.com/lerna/lerna) monorepos.
 
-**App**: webpack serving and building, scss/css support, public folder etc. - similar to create-react apps.
+**App**: webpack serving and building, scss/css support, public folder etc. - similar to create-react-app.
 
-**Backends**: NodeJS backend server, building/watching with babel and serving with nodemon.
+**Backends**: NodeJS backend server, watching and production build with babel, dev serving with nodemon.
 
-**Packages**: publishable packages, can be used by apps directly, production built with babel.
+**Packages**: publishable packages, can be used by apps/backends directly, production built with babel.
 
 **Supports**: ESNext, React, TypeScript, d.ts Generation, Sass, Code Split compatible, es-modules and commonjs, Jest and Testing Library, ...
 
