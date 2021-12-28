@@ -51,7 +51,13 @@ exports.createModulePackages = function createModulePackages(root) {
                     () => {
                         fs.writeFile(path.join(dir, 'package.json'), JSON.stringify({
                             sideEffects: false,
-                            module: path.join('../'.repeat(level + 1) + 'esm', path.basename(dir), 'index.js').replace(/\\/g, '/'),
+                            module:
+                                path.join(
+                                    '../'.repeat(level + 1),
+                                    'esm',
+                                    dir.slice(root.length + 1).replace(/\\/g, '/').split(/\//g).join('/'),
+                                    'index.js',
+                                ).replace(/\\/g, '/'),
                             typings: './index.d.ts',
                         }, null, 4), () => {
                             resolve()
