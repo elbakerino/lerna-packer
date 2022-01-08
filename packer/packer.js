@@ -40,7 +40,7 @@ module.exports = {
     resolve: {
         alias: {
             ${Object.values(packages).reduce((aliases, {name, entry}) =>
-                aliases + '\'' + [name] + '\': path.resolve(__dirname, \'.' + entry.replace(webpackPartialRoot, '').replace(/\\/g, '/') + '\'),\r\n'
+            aliases + '\'' + [name] + '\': path.resolve(__dirname, \'.' + entry.replace(webpackPartialRoot, '').replace(/\\/g, '/') + '\'),\r\n'
             , '')}
         }
     }
@@ -137,10 +137,24 @@ module.exports = {
 
     const backendsQty = Object.keys(backends).length
     if(backendsQty && (doBuildBackend || doServe)) {
+        console.log('Backends...')
+
+        if(doServe) {
+            const packagesNames = Object.keys(packages)
+            console.log('Starting ES build for ' + packagesNames.length + ' modules: `' + packagesNames.join(', ') + '`')
+            buildEsModules(packages, babelTargets, true)
+                .then(() => null)
+                .catch(err => {
+                    console.error(err)
+                    process.exit(1)
+                })
+        }
+
         console.log(
             (doBuildBackend ? 'Building backends:' : 'Start serving backends:') + ' ' +
             Object.keys(backends).join(', '),
         )
+
         const backendPromises = []
         for(let backend in backends) {
             backendPromises.push(

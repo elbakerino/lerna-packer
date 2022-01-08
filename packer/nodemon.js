@@ -44,6 +44,10 @@ function startNodemon(name, root, entry, experimental = {}) {
         if(experimental.jsonModules) {
             args.push('--experimental-json-modules')
         }
+        // todo: support `esm` loading here
+        if(experimental.jsonModules) {
+            args.push('-r esm')
+        }
         if(experimental.report) {
             args.push('--experimental-report')
         }
@@ -65,6 +69,7 @@ function startNodemon(name, root, entry, experimental = {}) {
         if(experimental.policy) {
             args.push('--experimental-policy=' + experimental.policy)
         }
+        // todo: add watches of node module deps
         args.push('-w', path.resolve(root, 'build'), serverFile)
         let nodemon = spawnNodemon(args)
         nodemon.stdout.on('data', (data) => {

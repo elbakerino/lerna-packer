@@ -198,6 +198,7 @@ const buildAppPair = (
             context: root,
             minimize: false,
             include: [
+                /// TODO !!!! HERE IS PACKAGES, backends needs a similar support
                 Object.values(packages).map(({root}) =>
                     path.resolve(root, 'src'),
                 ),
