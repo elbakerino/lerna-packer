@@ -10,26 +10,28 @@ function logStats(stats) {
     }) + '\n')
 }
 
-function serveWebpack(config) {
+function serveWebpack(appId, config) {
     const l = log('webpack dev-server')
     if(!config.devServer) {
-        l('`appConfig.devServer` is not defined', config)
-        return Promise.reject('webpack dev-server fail')
+        l('`appConfig.devServer` is not defined', {appId, config})
+        return Promise.reject('webpack dev-server config missing')
     }
 
-    l('Starting server...')
+    l('Starting server for app `' + appId + '`...')
 
     return new Promise((resolve, reject) => {
-        const server = new WebpackDevServer(webpack(config), config.devServer)
+        const server = new WebpackDevServer(config.devServer, webpack(config))
 
-        server.listen(config.devServer.port, 'localhost', function(err) {
-            if(err) {
-                l('Webpack Dev-Server listen error', err)
+        server.start(config.devServer.port, 'localhost')
+            .then(() => {
+                // todo: detect https from env/config:
+                l('listening at http://localhost:' + config.devServer.port + ' for app `' + appId + '`')
+                resolve()
+            })
+            .catch((err) => {
+                l('Webpack Dev-Server listen error for app `' + appId + '`', err)
                 reject(err)
-            }
-            l('WebpackDevServer listening at localhost:' + config.devServer.port)
-            resolve()
-        })
+            })
     })
 }
 

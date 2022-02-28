@@ -217,7 +217,7 @@ module.exports = {
                 if(typeof appsConfigs[app].serve === 'function') {
                     appsConfigs[app].serve = appsConfigs[app].serve()
                 }
-                servers.push(serveWebpack(appsConfigs[app].serve))
+                servers.push(serveWebpack(app, appsConfigs[app].serve))
             }
         }
 

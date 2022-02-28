@@ -5,9 +5,9 @@ const log = (prefix) => (message, ...err) => {
     const now = new Date()
     const ts = now.getHours().toFixed(0).padStart(2, '0') + ':' + now.getMinutes().toFixed(0).padStart(2, '0') + ':' + now.getSeconds().toFixed(0).padStart(2, '0')
     if(err.length > 0) {
-        console.error('[' + prefix + '] ' + ts + ' ' + message)
+        console.error(ts + ' [' + prefix + '] ' + message, ...err)
     } else {
-        console.log('[' + prefix + '] ' + ts + ' ' + message)
+        console.log(ts + ' [' + prefix + '] ' + message)
     }
 }
 exports.log = log
