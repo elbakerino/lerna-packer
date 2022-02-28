@@ -18,81 +18,116 @@ React multi-app and package build handling for [lerna](https://github.com/lerna/
 
 > **experimental**, fix the version without any modifier
 
-Add `packerConfig.js` with configs for apps and packages (component libraries):
+Add `packerConfig.js` with configs for apps and packages (component libraries).
+
+> [check typescript definition](https://github.com/elbakerino/lerna-packer/blob/master/index.d.ts) for full configuration options
 
 ```js
 const path = require('path');
 const {packer} = require('lerna-packer');
 
-const apps = {
-    docs: {
-        root: path.resolve(__dirname, 'packages', '_docs-control'),
-        template: path.resolve(__dirname, 'packages', '_docs-control/public/index.html'),
-        contentBase: path.resolve(__dirname, 'packages', '_docs-control/public'),// dev-server
-        port: 9219,
-        main: path.resolve(__dirname, 'packages', '_docs-control/src/index.tsx'),
-        dist: path.resolve(__dirname, 'dist', 'docs-control'),
-        publicPath: '/',
-        vendors: [],
-        plugins: [],
-    },
-};
-
-const backends = {
-    someApi: {
-        root: path.resolve(__dirname, 'packages', 'some-api'),
-        src: 'src',
-        entry: 'server.js',
-    },
-};
-
-const packages = {
-    // the keys are the commonjs names that is applied to externals
-    // this is the same as `@babel/plugin-transform-modules-commonjs` applies
-    controlKit: {
-        name: '@control-ui/kit',
-        root: path.resolve(__dirname, 'packages', 'control-kit'),
-        entry: path.resolve(__dirname, 'packages', 'control-kit/src/'),
-    },
-    controlApp: {
-        name: '@control-ui/app',
-        root: path.resolve(__dirname, 'packages', 'control-app'),
-        entry: path.resolve(__dirname, 'packages', 'control-app/src/'),
-    },
-};
-
 packer(
     // apps and packages are required, backends are optional
-    {apps, backends, packages},
-    __dirname
-);
+    {
+        apps: {
+            docs: {
+                port: 9219,// only for serving / webpack dev-server
+                root: path.resolve(__dirname, 'packages', '_docs-control'),
+                template: path.resolve(__dirname, 'packages', '_docs-control/public/index.html'),
+                contentBase: path.resolve(__dirname, 'packages', '_docs-control/public'),// also the root for the dev-server
+                main: path.resolve(__dirname, 'packages', '_docs-control/src/index.tsx'),
+                //entries: {},// further webpack entries for this app
+                dist: path.resolve(__dirname, 'dist', 'docs-control'),
+                publicPath: '/',
+                vendors: [],
+                plugins: [],
+            },
+        },
+        backends: {
+            someApi: {
+                root: path.resolve(__dirname, 'packages', 'some-api'),
+                src: 'src',
+                entry: 'server.js',
+            },
+        },
+        packages: {
+            // the keys are the commonjs names that is applied to externals
+            // this is the same as `@babel/plugin-transform-modules-commonjs` applies
+            controlKit: {
+                name: '@control-ui/kit',
+                root: path.resolve(__dirname, 'packages', 'control-kit'),
+                entry: path.resolve(__dirname, 'packages', 'control-kit/src/'),
+            },
+            controlApp: {
+                name: '@control-ui/app',
+                root: path.resolve(__dirname, 'packages', 'control-app'),
+                entry: path.resolve(__dirname, 'packages', 'control-app/src/'),
+            },
+        }
+    },
+    __dirname,
+    // optional, additional global packer config:
+    {
+        pathPackagesBuild: 'build',
+        pathPackages: 'packages',
+        onAppBuild: (appsConfigs, stats, configs) => {
+            return Promise.resolve(undefined)
+        },
+    }
+)
+    .then(([execs, elapsed]) => {
+        if(execs.indexOf('doServe') !== -1) {
+            console.log('[packer] is now serving (after ' + elapsed + 'ms)')
+            // do not exit when serving!
+        } else {
+            console.log('[packer] finished successfully (after ' + elapsed + 'ms)', execs)
+            process.exit(0)
+        }
+    })
+    .catch((e) => {
+        console.error('[packer] finished with error(s)', e)
+        process.exit(1)
+    })
 ```
 
-Add scripts to `package.json`:
+Add scripts to `package.json` to handle serving, building for developer and CI.
+
+- see command with `node packerConfig.js` for the `lerna-packer` CLI commands
+- see command with `lerna` for the `lerna` CLI commands
+- use:
+    - `npm start` for local dev build & serve
+    - `npm run build` for production ready build
+    - `npm run tdd` for test-driven development (jest)
+    - `npm i && npm run bootstrap && npm run link` for initial setup / after `package.json` changes
+    - `npm run clean && rm -rf node_modules` for cleanup of `dist`/build folders and `node_modules` folders
+    - `npm run clean-dist` for cleanup of only `dist`/build folders
+    - `npm run release` for npm / registry publishing of the `packages` (not apps/backends)
 
 ```json
 {
     "scripts": {
-        "start": "npm run clean-dist && npm run hoist && npm run serve",
+        "start": "npm run clean-dist && npm run serve",
         "serve": "cross-env NODE_ENV=development node packerConfig.js --serve",
-        "prebuild": "npm run clean-dist && npm run hoist",
-        "build": "npm run build-babel && npm run build-backend && npm run dtsgen && npm run build-webpack",
+        "prebuild": "npm run clean-dist",
+        "build": "npm run build-all && npm run dtsgen",
+        "build-all": "cross-env NODE_ENV=production CI=true node packerConfig.js --build --babel --backend --webpack",
         "build-babel": "cross-env NODE_ENV=production CI=true node packerConfig.js --build --babel",
         "build-backend": "cross-env NODE_ENV=production CI=true node packerConfig.js --build --backend",
         "build-webpack": "cross-env NODE_ENV=production CI=true node packerConfig.js --build --webpack",
         "clean": "npm run clean-dist && lerna clean -y",
         "clean-dist": "node packerConfig.js --clean",
+        "link": "lerna link --force-local",
         "dtsgen": "lerna run dtsgen",
         "bootstrap": "lerna bootstrap",
         "hoist": "lerna bootstrap --hoist",
         "test": "jest -c=\"packages/jest.config.js\"",
         "tdd": "npm test -- --watch --watchman --coverage=false",
-        "release": "lerna publish from-package --no-git-reset"
+        "release": "lerna publish from-package --contents build --no-git-reset"
     }
 }
 ```
 
-Add `babel.config.json` or similiar:
+Add `babel.config.json` or similar:
 
 ```json
 {
@@ -207,7 +242,7 @@ Add the following part into `package.json` for fatal errors on warnings for esli
         }
     },
     "nodemonConfig": {
-        "delay": 120
+        "delay": 140
     }
 }
 ```
@@ -226,7 +261,7 @@ This project is free software distributed under the **MIT License**.
 
 See: [LICENSE](LICENSE).
 
-© 2021 [Michael Becker](https://mlbr.xyz)
+© 2022 [Michael Becker](https://mlbr.xyz)
 
 ### Contributors
 

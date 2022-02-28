@@ -28,10 +28,10 @@ const spawnBabel = (args) => {
     return spawn(path, args)
 }
 
-function buildEsModule(name, pkg, target) {
+function buildEsModule(name, pkg, pathBuild, target) {
     return new Promise((resolve, reject) => {
         const entry = pkg.entry
-        const dist = path.resolve(pkg.root, 'build' + target.distSuffix)
+        const dist = path.resolve(pkg.root, pathBuild + target.distSuffix)
 
         let args = [entry, ...target.args, '--out-dir', dist]
 
@@ -55,31 +55,30 @@ function buildEsModule(name, pkg, target) {
     })
 }
 
-function buildEsModules(packages, targets = [
+function buildEsModules(packages, pathBuild, targets = [
     {distSuffix: '', args: ['--env-name', 'cjs', '--copy-files', '--extensions', '.ts', '--extensions', '.tsx', '--extensions', '.js', '--extensions', '.jsx', '--ignore', '**/*.d.ts']},
     {distSuffix: '/esm', args: ['--extensions', '.ts', '--extensions', '.tsx', '--extensions', '.js', '--extensions', '.jsx', '--ignore', '**/*.d.ts']},
 ]) {
     const babels = []
     Object.keys(packages).forEach(pack => {
         babels.push(
-            ...targets.map(target => buildEsModule(pack, packages[pack], target)),
+            ...targets.map(target => buildEsModule(pack, packages[pack], pathBuild, target)),
         )
     })
 
     return new Promise((resolve, reject) => {
         Promise.all(babels)
-            .then((e) => {
-                if(e.length === babels.length) {
-                    console.log('Built ES modules!')
-                    const packs = Object.keys(packages).map(pack =>
-                        createModulePackages(path.resolve(packages[pack].root, 'build')),
-                    )
-                    Promise.all(packs).then((e) => {
-                        if(e.length === packs.length) {
-                            resolve()
-                        }
+            .then(() => {
+                const packs = Object.keys(packages).map(pack =>
+                    createModulePackages(path.resolve(packages[pack].root, pathBuild)),
+                )
+                Promise.all(packs)
+                    .then(() => {
+                        resolve()
                     })
-                }
+                    .catch((err) => {
+                        reject(err)
+                    })
             })
             .catch((err) => {
                 reject(err)

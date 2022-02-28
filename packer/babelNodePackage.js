@@ -32,11 +32,12 @@ function buildNodePackage(
     name,
     root,
     src,
+    pathBuild,
     watch = false,
     babelArgs = ['--env-name', 'node', '--copy-files', '--extensions', '.ts', '--extensions', '.js', '--ignore', '**/*.d.ts'],
 ) {
     return new Promise((resolve, reject) => {
-        const dist = path.resolve(root, 'build')
+        const dist = path.resolve(root, pathBuild)
 
         let args = [root + '/' + src, ...babelArgs]
         if(watch) {

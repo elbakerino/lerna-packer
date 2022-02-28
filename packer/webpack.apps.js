@@ -6,10 +6,18 @@ const {merge} = require('webpack-merge')
 const {getConfig} = require('./webpack.common')
 const path = require('path')
 
-const buildAppConfig = (main, dist, root, template) => ({
+const buildAppConfig = (
+    main, entries, dist, root, template, {
+        cacheGroups = undefined,
+        htmlWebpackPluginOptions = {},
+        minify = false,
+        splitChunksName = false,
+    },
+) => ({
     entry: {
         vendors: ['react', 'react-dom'],
         main: main,
+        ...(entries || {}),
     },
     output: {
         filename: 'assets/[name].[fullhash:8].js',
@@ -64,70 +72,54 @@ const buildAppConfig = (main, dist, root, template) => ({
     optimization: {
         splitChunks: {
             chunks: 'all',
-            name: false,
-            cacheGroups: {
+            name: Boolean(splitChunksName),
+            cacheGroups: cacheGroups || {
                 default: false,
-                vendors: false,
-                vendor: {
+                vendors: {
                     chunks: 'all',
-                    test: /node_modules/,
+                    test: /[\\/]node_modules[\\/]/,
+                    reuseExistingChunk: true,
+                    priority: -15,
                 },
             },
         },
     },
     plugins: [
-        new HtmlWebpackPlugin(
-            Object.assign(
-                {},
-                {
-                    inject: true,
-                    template: template,
+        ...(template ? [new HtmlWebpackPlugin({
+            inject: true,
+            template: template,
+            ...(minify ? {
+                minify: {
+                    removeComments: true,
+                    collapseWhitespace: true,
+                    removeRedundantAttributes: true,
+                    useShortDoctype: true,
+                    removeEmptyAttributes: true,
+                    removeStyleLinkTypeAttributes: true,
+                    keepClosingSlash: true,
+                    minifyJS: true,
+                    minifyCSS: true,
+                    minifyURLs: true,
                 },
-                process.env.NODE_ENV === 'production' ? {
-                        minify: {
-                            removeComments: true,
-                            collapseWhitespace: true,
-                            removeRedundantAttributes: true,
-                            useShortDoctype: true,
-                            removeEmptyAttributes: true,
-                            removeStyleLinkTypeAttributes: true,
-                            keepClosingSlash: true,
-                            minifyJS: true,
-                            minifyCSS: true,
-                            minifyURLs: true,
-                        },
-                    }
-                    : undefined,
-            ),
-        ),
+            } : {}),
+            ...htmlWebpackPluginOptions,
+        })] : []),
     ],
 })
 
-/**
- * @param main
- * @param dist
- * @param root
- * @param template
- * @param contentBase
- * @param publicPath
- * @param devServer
- * @param devtoolServe
- * @param devtoolBuild
- * @param runtimeChunkServe
- * @param runtimeChunkBuild
- * @param port
- * @param vendors
- * @param copy
- * @param plugins
- * @param packages
- * @return {{build: (function(): {resolve: {extensions: string[]}, optimization: {minimize: boolean, minimizer: *[]}, module: {rules: [{include: *[], test: RegExp, loader: string, options: {formatter: string, cache: boolean, eslintPath: string, emitWarning: boolean}, enforce: string}, {include: *[], test: RegExp, use: [{loader: string, options: {cacheCompression: boolean, compact: boolean, cacheDirectory: boolean}}]}, {test: RegExp, loader: string, options: {cacheCompression: boolean, presets: [string, {helpers: boolean}][], compact: boolean, babelrc: boolean, configFile: boolean, cacheDirectory: boolean, sourceMaps: boolean}, exclude: *[]}, {test: RegExp, use: [{loader: string, options: {esModule: boolean}}, {loader: string}, {loader: string, options: {minimize: boolean}}]}, {test: RegExp, use: string[], exclude: RegExp[]}, null, null]}}), dist, serve: (function(): {resolve: {extensions: string[]}, optimization: {minimize: boolean, minimizer: *[]}, module: {rules: [{include: *[], test: RegExp, loader: string, options: {formatter: string, cache: boolean, eslintPath: string, emitWarning: boolean}, enforce: string}, {include: *[], test: RegExp, use: [{loader: string, options: {cacheCompression: boolean, compact: boolean, cacheDirectory: boolean}}]}, {test: RegExp, loader: string, options: {cacheCompression: boolean, presets: [string, {helpers: boolean}][], compact: boolean, babelrc: boolean, configFile: boolean, cacheDirectory: boolean, sourceMaps: boolean}, exclude: *[]}, {test: RegExp, use: [{loader: string, options: {esModule: boolean}}, {loader: string}, {loader: string, options: {minimize: boolean}}]}, {test: RegExp, use: string[], exclude: RegExp[]}, null, null]}})}}
- */
 const buildAppPair = (
-    {
-        main, dist, root, template,
-        contentBase,
-        publicPath,
+    appConfig,
+    packages,
+    pathBuild,
+) => {
+    const {
         port,
+        root,
+        main, entries,
+        contentBase, template,
+        contentBaseCopyIgnore = [],
+        dist,
+        publicPath,
         devServer = {},
         devtoolServe,
         devtoolBuild,
@@ -136,120 +128,138 @@ const buildAppPair = (
         vendors = [],
         copy = [],
         plugins = [],
-    },
-    packages,
-) => ({
-    dist,
-    serve: () => getConfig(
-        merge(
-            buildAppConfig(main, dist, root, template),
-            {
-                mode: 'development',
-                entry: {
-                    vendors,
-                },
-                resolve: {
-                    alias: Object.values(packages).reduce((aliases, {name, entry}) => {
-                        aliases[name] = entry
-                        return aliases
-                    }, {}),
-                },
-                devServer: {
-                    static: typeof devServer.static === 'object' ? {
-                        ...devServer.static,
-                        directory: contentBase,
-                        publicPath: publicPath || '/',
-                    } : [
-                        {
-                            directory: contentBase,
-                            publicPath: publicPath || '/',
-                        },
-                        ...(devServer.static || []),
-                    ],
-                    client: {
-                        logging: devServer.client && devServer.client.logging ? devServer.client.logging : 'info',
-                        overlay: devServer.client && typeof devServer.client.overlay !== 'undefined' ? devServer.client.overlay : undefined,
-                        progress: devServer.client && typeof devServer.client.progress !== 'undefined' ? devServer.client.progress : undefined,
+        cacheGroups,
+        htmlWebpackPluginOptions,
+    } = appConfig
+    return {
+        dist,
+        appConfig,
+        serve: () => getConfig(
+            merge(
+                buildAppConfig(
+                    main, entries, dist, root, template, {
+                        cacheGroups: cacheGroups,
+                        htmlWebpackPluginOptions: htmlWebpackPluginOptions,
+                        minify: false,
+                        splitChunksName: false,
                     },
-                    host: devServer.host ? devServer.host : undefined,
-                    headers: devServer.headers ? devServer.headers : undefined,
-                    open: typeof devServer.open !== 'undefined' ? devServer.open : undefined,
-                    proxy: devServer.proxy ? devServer.proxy : undefined,
-                    compress: true,
-                    hot: typeof devServer.hot !== 'undefined' ? devServer.hot : true,
-                    http2: typeof devServer.http2 !== 'undefined' ? devServer.http2 : undefined,
-                    https: typeof devServer.https !== 'undefined' ? devServer.https : undefined,
-                    magicHtml: typeof devServer.magicHtml !== 'undefined' ? devServer.magicHtml : undefined,
-                    historyApiFallback: typeof devServer.historyApiFallback !== 'undefined' ? devServer.historyApiFallback : true,
-                    port: port,
-                },
-                optimization: {
-                    runtimeChunk: typeof runtimeChunkServe !== 'undefined' ? runtimeChunkServe : 'single',
-                },
-                plugins: [
-                    ...(copy.length ? [new CopyPlugin({patterns: copy})] : []),
-                    ...plugins,
-                ],
-                //devtool: 'eval-cheap-module-source-map',// faster rebuild, not for production
-                devtool: devtoolServe || 'cheap-module-source-map',// slow build, for production
-            },
-        ),
-        {
-            context: root,
-            minimize: false,
-            include: [
-                Object.values(packages).map(({root}) =>
-                    path.resolve(root, 'src'),
                 ),
-            ],
-        },
-    ),
-    build: () => getConfig(
-        merge(
-            buildAppConfig(main, dist, root, template),
-            {
-                mode: 'production',
-                entry: {
-                    vendors,
-                },
-                resolve: {
-                    alias: Object.values(packages).reduce((aliases, {name, root}) => {
-                        aliases[name] = root + '/build'
-                        return aliases
-                    }, {}),
-                },
-                optimization: {
-                    runtimeChunk: typeof runtimeChunkBuild !== 'undefined' ? runtimeChunkBuild : 'single',
-                },
-                devtool: devtoolBuild,
-                plugins: [
-                    new CopyPlugin({
-                        patterns: [
+                {
+                    mode: 'development',
+                    entry: {
+                        vendors,
+                    },
+                    resolve: {
+                        alias: Object.values(packages).reduce((aliases, {name, entry}) => {
+                            aliases[name] = entry
+                            return aliases
+                        }, {}),
+                    },
+                    devServer: {
+                        static: typeof devServer.static === 'object' ? {
+                            ...devServer.static,
+                            directory: contentBase,
+                            publicPath: publicPath,
+                        } : [
                             {
-                                from: contentBase,
-                                to: dist,
-                                globOptions: {
-                                    ignore: [
-                                        ...(template.indexOf(contentBase) === 0 ? ['**/' + template.substr(contentBase.length + 1).replace(/\\/g, '/')] : []),
-                                    ],
-                                },
+                                directory: contentBase,
+                                publicPath: publicPath,
                             },
-                            ...copy,
+                            ...(devServer.static || []),
                         ],
-                    }),
-                    ...plugins,
-                    // Inlines the webpack runtime script. This script is too small to warrant
-                    // a network request.
-                    // https://github.com/facebook/create-react-app/issues/5358
-                    new InlineChunkHtmlPlugin(HtmlWebpackPlugin, [/runtime-.+[.]js/]),
+                        client: {
+                            logging: devServer.client && devServer.client.logging ? devServer.client.logging : 'info',
+                            overlay: devServer.client && typeof devServer.client.overlay !== 'undefined' ? devServer.client.overlay : undefined,
+                            progress: devServer.client && typeof devServer.client.progress !== 'undefined' ? devServer.client.progress : undefined,
+                        },
+                        host: devServer.host ? devServer.host : undefined,
+                        headers: devServer.headers ? devServer.headers : undefined,
+                        open: typeof devServer.open !== 'undefined' ? devServer.open : undefined,
+                        proxy: devServer.proxy ? devServer.proxy : undefined,
+                        compress: true,
+                        hot: typeof devServer.hot !== 'undefined' ? devServer.hot : true,
+                        http2: typeof devServer.http2 !== 'undefined' ? devServer.http2 : undefined,
+                        https: typeof devServer.https !== 'undefined' ? devServer.https : undefined,
+                        magicHtml: typeof devServer.magicHtml !== 'undefined' ? devServer.magicHtml : undefined,
+                        historyApiFallback: typeof devServer.historyApiFallback !== 'undefined' ? devServer.historyApiFallback : true,
+                        port: port,
+                    },
+                    optimization: {
+                        runtimeChunk: typeof runtimeChunkServe !== 'undefined' ? runtimeChunkServe : 'single',
+                    },
+                    plugins: [
+                        ...(copy.length ? [new CopyPlugin({patterns: copy})] : []),
+                        ...plugins,
+                    ],
+                    //devtool: 'eval-cheap-module-source-map',// faster rebuild, not for production
+                    devtool: devtoolServe || 'cheap-module-source-map',// slow build, for production
+                },
+            ),
+            {
+                context: root,
+                minimize: false,
+                include: [
+                    Object.values(packages).map(({root}) =>
+                        path.resolve(root, 'src'),
+                    ),
                 ],
             },
         ),
-        {
-            context: root,
-            minimize: true,
-        },
-    ),
-})
+        build: () => getConfig(
+            merge(
+                buildAppConfig(
+                    main, entries, dist, root, template, {
+                        cacheGroups: cacheGroups,
+                        htmlWebpackPluginOptions: htmlWebpackPluginOptions,
+                        minify: true,
+                        splitChunksName: false,
+                    },
+                ),
+                {
+                    mode: 'production',
+                    entry: {
+                        vendors,
+                    },
+                    resolve: {
+                        alias: Object.values(packages).reduce((aliases, {name, root}) => {
+                            aliases[name] = root + '/' + pathBuild
+                            return aliases
+                        }, {}),
+                    },
+                    optimization: {
+                        runtimeChunk: typeof runtimeChunkBuild !== 'undefined' ? runtimeChunkBuild : 'single',
+                    },
+                    devtool: devtoolBuild,
+                    plugins: [
+                        new CopyPlugin({
+                            patterns: [
+                                {
+                                    from: contentBase,
+                                    to: dist,
+                                    globOptions: {
+                                        ignore: template && template.indexOf(contentBase) === 0 ? [
+                                            '**/' + template.slice(contentBase.length + 1).replace(/\\/g, '/'),
+                                            ...contentBaseCopyIgnore,
+                                        ] : contentBaseCopyIgnore,
+                                    },
+                                },
+                                ...copy,
+                            ],
+                        }),
+                        ...plugins,
+                        // Inlines the webpack runtime script. This script is too small to warrant
+                        // a network request.
+                        // https://github.com/facebook/create-react-app/issues/5358
+                        new InlineChunkHtmlPlugin(HtmlWebpackPlugin, [/runtime-.+[.]js/]),
+                    ],
+                },
+            ),
+            {
+                context: root,
+                minimize: true,
+            },
+        ),
+    }
+}
 
 exports.buildAppPair = buildAppPair

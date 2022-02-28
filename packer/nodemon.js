@@ -23,17 +23,18 @@ const spawnNodemon = (args) => {
         }
     } catch(e) {
         // console.log('not found: ../../../.bin/nodemon')
+        throw new Error('lerna-packer serve backends: no .bin/nodemon found in any of the specified directories, maybe missing?')
     }
     return spawn(path, args)
 }
 
-function startNodemon(name, root, entry, experimental = {}) {
+function startNodemon(name, root, entry, build, experimental = {}) {
     return new Promise((resolve, reject) => {
-        const buildDir = path.resolve(root, 'build')
+        const buildDir = path.resolve(root, build)
         if(!fs.existsSync(buildDir)) {
             fs.mkdirSync(buildDir, {recursive: true})
         }
-        const serverFile = path.resolve(root, 'build', entry)
+        const serverFile = path.resolve(root, build, entry)
         fs.writeFile(serverFile, '', {flag: 'wx'}, function(err) {
             if(err) {
                 console.error(err)
@@ -65,7 +66,7 @@ function startNodemon(name, root, entry, experimental = {}) {
         if(experimental.policy) {
             args.push('--experimental-policy=' + experimental.policy)
         }
-        args.push('-w', path.resolve(root, 'build'), serverFile)
+        args.push('-w', path.resolve(root, build), serverFile)
         let nodemon = spawnNodemon(args)
         nodemon.stdout.on('data', (data) => {
             process.stdout.write(`[${name}, nodemon] ${data}`)

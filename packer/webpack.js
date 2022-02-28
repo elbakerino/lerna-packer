@@ -2,6 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const webpack = require('webpack')
 const WebpackDevServer = require('webpack-dev-server')
+const {log} = require('./tools')
 
 function logStats(stats) {
     process.stdout.write(stats.toString({
@@ -10,59 +11,60 @@ function logStats(stats) {
 }
 
 function serveWebpack(config) {
+    const l = log('webpack dev-server')
     if(!config.devServer) {
-        console.error('DevServer is not defined!')
-        process.exit(1)
+        l('`appConfig.devServer` is not defined', config)
+        return Promise.reject('webpack dev-server fail')
     }
 
-    console.log('Starting Webpack Dev-Server...')
+    l('Starting server...')
 
     return new Promise((resolve, reject) => {
         const server = new WebpackDevServer(webpack(config), config.devServer)
 
         server.listen(config.devServer.port, 'localhost', function(err) {
             if(err) {
-                console.log(err)
+                l('Webpack Dev-Server listen error', err)
                 reject(err)
             }
-            console.log('WebpackDevServer listening at localhost:' + config.devServer.port)
+            l('WebpackDevServer listening at localhost:' + config.devServer.port)
             resolve()
         })
     })
 }
 
-function buildWebpack(config, root, cb) {
-    webpack(config, (err, stats) => {
-        if(err) {
-            console.error(err.stack || err)
-            if(err.details) {
-                console.error(err.details)
+function buildWebpack(configs, appsConfigs, withProfile, root, onAppBuild) {
+    return new Promise((resolve, reject) => {
+        webpack(configs, (err, stats) => {
+            if(err) {
+                console.error(err.stack || err)
+                if(err.details) {
+                    console.error(err.details)
+                }
+                reject()
             }
-            process.exit(1)
-        }
 
-        if(stats.hasErrors()) {
-            logStats(stats)
-            console.error('Compilation has errors!')
-            process.exit(1)
-        } else if(stats.hasWarnings()) {
-            logStats(stats)
-            console.error('Compilation has warnings!')
-            process.exit(1)
-        } else {
-            logStats(stats)
-            if(config.profile) {
-                fs.writeFile(path.join(root, '/profile.json'), JSON.stringify(stats.toJson(), null, 4), () => {
-                    if(cb) {
-                        cb()
-                    }
-                })
+            if(stats.hasErrors()) {
+                logStats(stats)
+                console.error('Compilation has errors!')
+                reject()
+            } else if(stats.hasWarnings()) {
+                logStats(stats)
+                console.error('Compilation has warnings!')
+                reject()
             } else {
-                if(cb) {
-                    cb()
+                logStats(stats)
+                if(withProfile) {
+                    fs.writeFile(path.join(root, '/profile.json'), JSON.stringify(stats.toJson(), null, 4), () => {
+                        resolve(stats)
+                    })
+                } else {
+                    if(onAppBuild) {
+                        resolve(stats)
+                    }
                 }
             }
-        }
+        })
     })
 }
 
