@@ -98,6 +98,8 @@ export interface AppsConfig {
     // https://webpack.js.org/configuration/optimization/#optimizationruntimechunk
     runtimeChunkServe?: string | object | boolean
     runtimeChunkBuild?: string | object | boolean
+
+    webpackBuilds?: Configuration[]
 }
 
 export interface BackendConfig {

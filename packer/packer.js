@@ -37,28 +37,6 @@ const packer = async (
         appsConfigs[app] = buildAppPair(apps[app], packages, pathBuild)
     }
 
-    if(doBuildWebpack || doServe) {
-        const webpackPartialRoot = path.join(root, pathPackages)
-        const webpackPartialFile = path.join(webpackPartialRoot, 'webpackPartialConfig.js')
-        const webpackPartial = `
-const path = require('path');
-
-module.exports = {
-    resolve: {
-        alias: {
-            ${Object.values(packages).reduce((aliases, {name, entry}) =>
-                aliases + '\'' + [name] + '\': path.resolve(__dirname, \'.' + entry.replace(webpackPartialRoot, '').replace(/\\/g, '/') + '\'),\r\n'
-            , '')}
-        }
-    }
-}`
-        // todo: make await?
-        fs.writeFile(webpackPartialFile, webpackPartial, err => {
-            if(err) return l('webpackPartial save failed', err)
-            l('Updated webpackPartial.config.json')
-        })
-    }
-
     if(doClean) {
         // clean dists
 
@@ -95,6 +73,28 @@ module.exports = {
                 : undefined)
     }
 
+    if(doBuildWebpack || doServe) {
+        const webpackPartialRoot = path.join(root, pathPackages)
+        const webpackPartialFile = path.join(webpackPartialRoot, 'webpackPartialConfig.js')
+        const webpackPartial = `
+const path = require('path');
+
+module.exports = {
+    resolve: {
+        alias: {
+            ${Object.values(packages).reduce((aliases, {name, entry}) =>
+                aliases + '\'' + [name] + '\': path.resolve(__dirname, \'.' + entry.replace(webpackPartialRoot, '').replace(/\\/g, '/') + '\'),\r\n'
+            , '')}
+        }
+    }
+}`
+        // todo: make await?
+        fs.writeFile(webpackPartialFile, webpackPartial, err => {
+            if(err) return l('webpackPartial save failed', err)
+            l('Updated webpackPartial.config.json')
+        })
+    }
+
     if(doBuildBabel || doBuildWebpack) {
         // production build
         l('Start Production build')
@@ -114,10 +114,10 @@ module.exports = {
 
         if(doBuildWebpack) {
             console.log('')
-            l('Starting webpack build for apps `' + (Object.keys(apps).join(', ')) + '`')
-            // combine configs to build demo apps
+            l('Starting webpack build for apps `' + (Object.keys(appsConfigs).join(', ')) + '`')
+            // get all `build` webpack configurations, for each app, executed by one `webpack`
             const configs = []
-            for(let app in apps) {
+            for(let app in appsConfigs) {
                 if(!appsConfigs[app].build) {
                     l('App has no serve config: ', app)
                     return Promise.reject()
@@ -133,6 +133,10 @@ module.exports = {
                 }
 
                 configs.push(appsConfigs[app].build)
+
+                if(appsConfigs[app].appConfig.webpackBuilds){
+                    configs.push(...appsConfigs[app].appConfig.webpackBuilds)
+                }
             }
 
             if(configs.length > 0) {
@@ -209,7 +213,7 @@ module.exports = {
 
         let doServers = doServe !== true ? (Array.isArray(doServe) ? doServe : [doServe]) : false
         let servers = []
-        for(let app in apps) {
+        for(let app in appsConfigs) {
             if(Array.isArray(doServers) && doServers.indexOf(app) === -1) {
                 continue
             }
@@ -222,7 +226,7 @@ module.exports = {
         }
 
         if(servers.length > 0) {
-            await Promise.all(servers).then((r) => l('Started serving ' + r.length + ' from ' + Object.keys(apps).length + ' apps.'))
+            await Promise.all(servers).then((r) => l('Started serving ' + r.length + ' from ' + Object.keys(appsConfigs).length + ' apps.'))
         } else {
             l('No apps starting, no defined or activated..')
         }
