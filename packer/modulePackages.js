@@ -1,23 +1,69 @@
 const fs = require('fs')
 const path = require('path')
 
-const scanner = function(dir, exclude = [], {onDir = () => null, onFile = () => null}, level = 0) {
-    fs.readdir(dir, (err, list) => {
-        list.forEach(function(file) {
-            file = path.resolve(dir, file)
-            fs.stat(file, function(err, stat) {
-                if(stat && stat.isDirectory()) {
-                    if(exclude.includes(file)) {
-                        return
-                    }
-                    onDir(file, level)
-                    scanner(file, exclude, {onDir, onFile}, level + 1)
-                } else {
-                    onFile(file)
-                }
-            })
+const scanner = async function(
+    dir,
+    exclude = [],
+    {onDir = () => Promise.resolve(undefined), onFile = () => Promise.resolve(undefined)},
+    level = 0,
+) {
+    await new Promise((resolve, reject) => {
+        fs.readdir(dir, (err, list) => {
+            if(err) {
+                reject(err)
+                return
+            }
+            resolve(list)
         })
     })
+        .then((fileList) => {
+            const stats = []
+            for(const file of fileList) {
+                const filePath = path.resolve(dir, file)
+                stats.push(new Promise((resolve, reject) => {
+                    fs.stat(filePath, function(err, stat) {
+                        if(err) {
+                            reject(err)
+                            return
+                        }
+                        resolve([stat, filePath])
+                    })
+                }))
+            }
+            return Promise.all(stats)
+        })
+        .then((stats) => {
+            const info = {
+                dirs: [],
+                files: [],
+            }
+            stats.filter(s => Array.isArray(s)).forEach(([stat, filePath]) => {
+                if(stat && stat.isDirectory()) {
+                    if(exclude.includes(filePath)) {
+                        return
+                    }
+                    info.dirs.push([filePath, level])
+                    //onDir(filePath, level)
+                    //scanner(filePath, exclude, {onDir, onFile}, level + 1)
+                } else {
+                    info.files.push([filePath, level])
+                    //onFile(filePath)
+                }
+            })
+            return info
+        })
+        .then(({dirs, files}) => {
+            const nested = []
+            for(const [filePath, level] of dirs) {
+                nested.push(onDir(filePath, level))
+                nested.push(scanner(filePath, exclude, {onDir, onFile}, level + 1))
+            }
+            for(const [filePath, level] of files) {
+                nested.push(onFile(filePath, level))
+            }
+            return Promise.all(nested)
+        })
+        .then(() => undefined)
 }
 
 const fileExists = (path, onExists, onMissing) => {
@@ -42,10 +88,9 @@ const fileExists = (path, onExists, onMissing) => {
  * @param {string} root
  */
 exports.createModulePackages = function createModulePackages(root) {
-    const actions = []
-    scanner(root, [path.resolve(root, 'esm')], {
+    return scanner(root, [path.resolve(root, 'esm')], {
         onDir: (dir, level) => {
-            actions.push(new Promise(((resolve) => {
+            return new Promise(((resolve) => {
                 fileExists(
                     path.join(dir, 'index.js'),
                     () => {
@@ -69,9 +114,7 @@ exports.createModulePackages = function createModulePackages(root) {
                         resolve()
                     },
                 )
-            })))
+            }))
         },
     })
-
-    return Promise.all(actions)
 }

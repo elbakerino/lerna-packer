@@ -66,24 +66,16 @@ function buildEsModules(packages, pathBuild, targets = [
         )
     })
 
-    return new Promise((resolve, reject) => {
-        Promise.all(babels)
-            .then(() => {
-                const packs = Object.keys(packages).map(pack =>
-                    createModulePackages(path.resolve(packages[pack].root, pathBuild)),
-                )
-                Promise.all(packs)
-                    .then(() => {
-                        resolve()
-                    })
-                    .catch((err) => {
-                        reject(err)
-                    })
-            })
-            .catch((err) => {
-                reject(err)
-            })
-    })
+    return Promise.all(babels)
 }
 
 exports.buildEsModules = buildEsModules
+
+function buildEsModulesPackagesJson(packages, pathBuild) {
+    const packs = Object.keys(packages).map(pack =>
+        createModulePackages(path.resolve(packages[pack].root, pathBuild)),
+    )
+    return Promise.all(packs)
+}
+
+exports.buildEsModulesPackagesJson = buildEsModulesPackagesJson

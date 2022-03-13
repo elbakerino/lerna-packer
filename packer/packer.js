@@ -2,7 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const argv = require('minimist')(process.argv.slice(2))
 const {delDir, log} = require('./tools')
-const {buildEsModules} = require('./babelEsModules')
+const {buildEsModules, buildEsModulesPackagesJson} = require('./babelEsModules')
 const {buildNodePackage} = require('./babelNodePackage')
 const {startNodemon} = require('./nodemon')
 const {buildWebpack, serveWebpack} = require('./webpack')
@@ -74,24 +74,30 @@ const packer = async (
     }
 
     if(doBuildWebpack || doServe) {
-        const webpackPartialRoot = path.join(root, pathPackages)
-        const webpackPartialFile = path.join(webpackPartialRoot, 'webpackPartialConfig.js')
-        const webpackPartial = `
+        await new Promise((resolve, reject) => {
+            const webpackPartialRoot = path.join(root, pathPackages)
+            const webpackPartialFile = path.join(webpackPartialRoot, 'webpackPartialConfig.js')
+            const webpackPartial = `
 const path = require('path');
 
 module.exports = {
     resolve: {
         alias: {
             ${Object.values(packages).reduce((aliases, {name, entry}) =>
-                aliases + '\'' + [name] + '\': path.resolve(__dirname, \'.' + entry.replace(webpackPartialRoot, '').replace(/\\/g, '/') + '\'),\r\n'
-            , '')}
+                    aliases + '\'' + [name] + '\': path.resolve(__dirname, \'.' + entry.replace(webpackPartialRoot, '').replace(/\\/g, '/') + '\'),\r\n'
+                , '')}
         }
     }
 }`
-        // todo: make await?
-        fs.writeFile(webpackPartialFile, webpackPartial, err => {
-            if(err) return l('webpackPartial save failed', err)
-            l('Updated webpackPartial.config.json')
+            fs.writeFile(webpackPartialFile, webpackPartial, err => {
+                if(err) {
+                    l('Saving webpackPartial.config.json failed', err)
+                    reject(err)
+                    return
+                }
+                l('Updated webpackPartial.config.json')
+                resolve()
+            })
         })
     }
 
@@ -103,6 +109,17 @@ module.exports = {
         if(doBuildBabel && packagesNames.length > 0) {
             l('Start ESM build for ' + packagesNames.length + ' modules: `' + packagesNames.join(', ') + '`')
             await buildEsModules(packages, pathBuild, babelTargets)
+                .then(() => {
+                    l('Start generating packages.json in module folders')
+                    return buildEsModulesPackagesJson(packages, pathBuild)
+                        .then(() => {
+                            l('Done generating packages.json in module folders')
+                        })
+                        .catch(err => {
+                            l('Error while generating packages.json in module folders', err)
+                            return Promise.reject('generating packages.json in module folders failure')
+                        })
+                })
                 .then(() => {
                     l('Done ESM build')
                 })
@@ -134,7 +151,7 @@ module.exports = {
 
                 configs.push(appsConfigs[app].build)
 
-                if(appsConfigs[app].appConfig.webpackBuilds){
+                if(appsConfigs[app].appConfig.webpackBuilds) {
                     configs.push(...appsConfigs[app].appConfig.webpackBuilds)
                 }
             }
