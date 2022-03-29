@@ -105,7 +105,12 @@ export interface AppsConfig {
 export interface BackendConfig {
     root: string
     src: string
-    entry: string
+    // entry to use as start point for `nodemon` - optional
+    entry?: string
+    // overwrite the babel args
+    babelArgs?: string[]
+    // additional args for nodemon
+    nodemonArgs?: string[]
     nodeExperimental?: {
         // `--experimental-json-modules`
         jsonModules?: boolean

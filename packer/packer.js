@@ -110,14 +110,14 @@ module.exports = {
             l('Start ESM build for ' + packagesNames.length + ' modules: `' + packagesNames.join(', ') + '`')
             await buildEsModules(packages, pathBuild, babelTargets)
                 .then(() => {
-                    l('Start generating packages.json in module folders')
+                    l('Start generating package.json in module folders')
                     return buildEsModulesPackagesJson(packages, pathBuild)
                         .then(() => {
-                            l('Done generating packages.json in module folders')
+                            l('Done generating package.json in module folders')
                         })
                         .catch(err => {
-                            l('Error while generating packages.json in module folders', err)
-                            return Promise.reject('generating packages.json in module folders failure')
+                            l('Error while generating package.json in module folders', err)
+                            return Promise.reject('generating package.json in module folders failure')
                         })
                 })
                 .then(() => {
@@ -196,9 +196,10 @@ module.exports = {
                     backends[backend].src,
                     pathBuild,
                     doServe,
+                    backends[backend].babelArgs,
                 ),
             )
-            if(doServe) {
+            if(doServe && typeof backends[backend].entry === 'string') {
                 backendPromises.push(
                     startNodemon(
                         backend,
@@ -206,6 +207,7 @@ module.exports = {
                         backends[backend].entry,
                         pathBuild,
                         backends[backend].nodeExperimental,
+                        backends[backend].nodemonArgs,
                     ),
                 )
             }

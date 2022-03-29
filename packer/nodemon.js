@@ -28,7 +28,12 @@ const spawnNodemon = (args) => {
     return spawn(path, args)
 }
 
-function startNodemon(name, root, entry, build, experimental = {}) {
+function startNodemon(
+    name, root, entry,
+    build,
+    experimental = {},
+    extraArgs = [],
+) {
     return new Promise((resolve, reject) => {
         const buildDir = path.resolve(root, build)
         if(!fs.existsSync(buildDir)) {
@@ -66,8 +71,11 @@ function startNodemon(name, root, entry, build, experimental = {}) {
         if(experimental.policy) {
             args.push('--experimental-policy=' + experimental.policy)
         }
-        args.push('-w', path.resolve(root, build), serverFile)
-        let nodemon = spawnNodemon(args)
+        args.push('-w', path.resolve(root, build))
+        args.push(...extraArgs)
+        args.push(serverFile)
+
+        const nodemon = spawnNodemon(args)
         nodemon.stdout.on('data', (data) => {
             process.stdout.write(`[${name}, nodemon] ${data}`)
         })
