@@ -12,6 +12,7 @@ const buildAppConfig = (
         htmlWebpackPluginOptions = {},
         minify = false,
         splitChunksName = false,
+        noParse,
     },
 ) => ({
     entry: {
@@ -68,6 +69,7 @@ const buildAppConfig = (
                 name: 'assets/media/[name].[contenthash:8].[ext]',
             },
         }],
+        noParse,
     },
     optimization: {
         splitChunks: {
@@ -130,6 +132,7 @@ const buildAppPair = (
         plugins = [],
         cacheGroups,
         htmlWebpackPluginOptions,
+        noParse,
     } = appConfig
     return {
         dist,
@@ -142,6 +145,7 @@ const buildAppPair = (
                         htmlWebpackPluginOptions: htmlWebpackPluginOptions,
                         minify: false,
                         splitChunksName: false,
+                        noParse,
                     },
                 ),
                 {
@@ -213,6 +217,7 @@ const buildAppPair = (
                         htmlWebpackPluginOptions: htmlWebpackPluginOptions,
                         minify: true,
                         splitChunksName: false,
+                        noParse,
                     },
                 ),
                 {

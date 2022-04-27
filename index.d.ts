@@ -99,7 +99,11 @@ export interface AppsConfig {
     runtimeChunkServe?: string | object | boolean
     runtimeChunkBuild?: string | object | boolean
 
+    // additional webpack configs to execute in parallel
     webpackBuilds?: Configuration[]
+
+    // webpack config for `module.noParse`
+    noParse?: any[]
 }
 
 export interface BackendConfig {
