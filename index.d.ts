@@ -57,6 +57,8 @@ export interface AppsConfig {
     // is used to create relative paths out of the other paths internally,
     // must be defined with `path.resolve`
     root: string
+    // folder below `root`, that contains the code files, defaults to `src`, must be relative
+    rootSrc: string
 
     // the path to the e.g. `public` folder, must be below of `root`, must be defined with `path.resolve`
     contentBase: string
@@ -102,6 +104,15 @@ export interface AppsConfig {
     // additional webpack configs to execute in parallel
     webpackBuilds?: Configuration[]
 
+    // extra config, merged as last config into the respective part
+    webpackConfig?: {
+        // used for `build` or `serve`,
+        // if defined additionally to e.g. `build`, then `global is merged first
+        global?: Partial<Configuration>
+        build?: Partial<Configuration>
+        serve?: Partial<Configuration>
+    }
+
     // webpack config for `module.noParse`
     noParse?: any[]
 }
@@ -139,6 +150,8 @@ export interface BackendConfig {
 export interface PackageConfig {
     name: string
     root: string
+    // folder below `root`, that contains the code files, defaults to `src`, must be relative
+    rootSrc?: string
     entry: string
 }
 

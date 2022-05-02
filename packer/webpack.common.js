@@ -1,21 +1,21 @@
 'use strict'
 
 const path = require('path')
-const {merge} = require('webpack-merge')
 const isWsl = require('is-wsl')
 const TerserPlugin = require('terser-webpack-plugin')
 
 function getConfig(
-    customConfig = {},
+    isProd = false,
     {
         context = '',
+        src,
         minimize = true,
         // babelPresets = [],
         // babelPlugins = [],
         include = [],
     } = {},
 ) {
-    const config = {
+    return {
         resolve: {
             extensions: ['.tsx', '.ts', '.js', '.jsx'],
         },
@@ -26,14 +26,14 @@ function getConfig(
                     test: /\.(js|jsx|ts|tsx)$/,
                     //test: /\.(js|jsx|d\.ts)$/,
                     include: [
-                        path.join(context, 'src'),
+                        path.join(context, src),
                         ...include,
                     ],
                     options: {
                         cache: true,
                         formatter: require.resolve('react-dev-utils/eslintFormatter'),
                         eslintPath: require.resolve('eslint'),
-                        emitWarning: !(customConfig.mode === 'production'),
+                        emitWarning: !isProd,
                         //failOnError: true,
                         //failOnWarning: true,
                     },
@@ -41,7 +41,7 @@ function getConfig(
                 }, {
                     test: /\.(js|jsx|ts|tsx)$/,
                     include: [
-                        path.join(context, 'src'),
+                        path.join(context, src),
                         ...include,
                     ],
                     use: [{
@@ -69,7 +69,7 @@ function getConfig(
                     test: /\.(js|mjs)$/,
                     exclude: [
                         /@babel(?:\/|\\{1,2})runtime/,
-                        path.join(context, 'src'),
+                        path.join(context, src'),
                         ...include,
                     ],
                     loader: 'babel-loader',
@@ -186,8 +186,6 @@ function getConfig(
             ],
         },
     }
-
-    return merge(config, customConfig)
 }
 
 exports.getConfig = getConfig

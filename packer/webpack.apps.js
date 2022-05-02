@@ -117,6 +117,7 @@ const buildAppPair = (
     const {
         port,
         root,
+        rootSrc = 'src',
         main, entries,
         contentBase, template,
         contentBaseCopyIgnore = [],
@@ -133,12 +134,26 @@ const buildAppPair = (
         cacheGroups,
         htmlWebpackPluginOptions,
         noParse,
+        webpackConfig,
     } = appConfig
     return {
         dist,
         appConfig,
-        serve: () => getConfig(
+        serve: () =>
             merge(
+                getConfig(
+                    false,
+                    {
+                        context: root,
+                        src: rootSrc,
+                        minimize: false,
+                        include: [
+                            Object.values(packages).map(({root, rootSrc = 'src'}) =>
+                                path.resolve(root, rootSrc),
+                            ),
+                        ],
+                    },
+                ),
                 buildAppConfig(
                     main, entries, dist, root, template, {
                         cacheGroups: cacheGroups,
@@ -198,19 +213,19 @@ const buildAppPair = (
                     //devtool: 'eval-cheap-module-source-map',// faster rebuild, not for production
                     devtool: devtoolServe || 'cheap-module-source-map',// slow build, for production
                 },
+                webpackConfig ? webpackConfig.global || {} : {},
+                webpackConfig ? webpackConfig.serve || {} : {},
             ),
-            {
-                context: root,
-                minimize: false,
-                include: [
-                    Object.values(packages).map(({root}) =>
-                        path.resolve(root, 'src'),
-                    ),
-                ],
-            },
-        ),
-        build: () => getConfig(
+        build: () =>
             merge(
+                getConfig(
+                    true,
+                    {
+                        context: root,
+                        src: rootSrc,
+                        minimize: true,
+                    },
+                ),
                 buildAppConfig(
                     main, entries, dist, root, template, {
                         cacheGroups: cacheGroups,
@@ -258,12 +273,9 @@ const buildAppPair = (
                         new InlineChunkHtmlPlugin(HtmlWebpackPlugin, [/runtime-.+[.]js/]),
                     ],
                 },
+                webpackConfig ? webpackConfig.global || {} : {},
+                webpackConfig ? webpackConfig.build || {} : {},
             ),
-            {
-                context: root,
-                minimize: true,
-            },
-        ),
     }
 }
 
