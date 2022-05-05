@@ -39,7 +39,6 @@ packer(
                 //entries: {},// further webpack entries for this app
                 dist: path.resolve(__dirname, 'dist', 'docs-control'),
                 publicPath: '/',
-                vendors: [],
                 plugins: [],
             },
         },

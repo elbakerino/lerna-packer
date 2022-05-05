@@ -2,7 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const argv = require('minimist')(process.argv.slice(2))
 const {delDir, log} = require('./tools')
-const {buildEsModules, buildEsModulesPackagesJson} = require('./babelEsModules')
+const {buildEsModules} = require('./babelEsModules')
 const {buildNodePackage} = require('./babelNodePackage')
 const {startNodemon} = require('./nodemon')
 const {buildWebpack, serveWebpack} = require('./webpack')
@@ -20,6 +20,7 @@ const packer = async (
         pathPackages = 'packages',
         pathBuild = 'build',
         onAppBuild = undefined,
+        afterEsModules = undefined,
     } = {},
 ) => {
     const startTime = process.hrtime()
@@ -60,11 +61,6 @@ const packer = async (
 
             let pack_mod = path.resolve(root, pathBuild)
             promises.push(delDir(pack_mod))
-
-            /*let pack_mod = path.resolve(pack, 'lib');
-            promises.push(delDir(pack_mod));
-            let pack_es = path.resolve(pack, 'es');
-            promises.push(delDir(pack_es));*/
         })
 
         await Promise.all(promises)
@@ -110,14 +106,17 @@ module.exports = {
             l('Start ESM build for ' + packagesNames.length + ' modules: `' + packagesNames.join(', ') + '`')
             await buildEsModules(packages, pathBuild, babelTargets)
                 .then(() => {
-                    l('Start generating package.json in module folders')
-                    return buildEsModulesPackagesJson(packages, pathBuild)
+                    if(!afterEsModules) {
+                        return Promise.resolve()
+                    }
+                    l('Start ESM build finalizing')
+                    return afterEsModules(packages, pathBuild)
                         .then(() => {
-                            l('Done generating package.json in module folders')
+                            l('Done ESM build finalize')
                         })
                         .catch(err => {
-                            l('Error while generating package.json in module folders', err)
-                            return Promise.reject('generating package.json in module folders failure')
+                            l('Done finalizing ESM build', err)
+                            return Promise.reject('afterEsModules failed')
                         })
                 })
                 .then(() => {

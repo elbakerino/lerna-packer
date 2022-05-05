@@ -11,12 +11,10 @@ const buildAppConfig = (
         cacheGroups = undefined,
         htmlWebpackPluginOptions = {},
         minify = false,
-        splitChunksName = false,
         noParse,
     },
 ) => ({
     entry: {
-        vendors: ['react', 'react-dom'],
         main: main,
         ...(entries || {}),
     },
@@ -74,7 +72,7 @@ const buildAppConfig = (
     optimization: {
         splitChunks: {
             chunks: 'all',
-            name: Boolean(splitChunksName),
+            name: false,
             cacheGroups: cacheGroups || {
                 default: false,
                 vendors: {
@@ -128,7 +126,6 @@ const buildAppPair = (
         devtoolBuild,
         runtimeChunkServe,
         runtimeChunkBuild,
-        vendors = [],
         copy = [],
         plugins = [],
         cacheGroups,
@@ -159,15 +156,11 @@ const buildAppPair = (
                         cacheGroups: cacheGroups,
                         htmlWebpackPluginOptions: htmlWebpackPluginOptions,
                         minify: false,
-                        splitChunksName: false,
                         noParse,
                     },
                 ),
                 {
                     mode: 'development',
-                    entry: {
-                        vendors,
-                    },
                     resolve: {
                         alias: Object.values(packages).reduce((aliases, {name, entry}) => {
                             aliases[name] = entry
@@ -231,23 +224,23 @@ const buildAppPair = (
                         cacheGroups: cacheGroups,
                         htmlWebpackPluginOptions: htmlWebpackPluginOptions,
                         minify: true,
-                        splitChunksName: false,
                         noParse,
                     },
                 ),
                 {
                     mode: 'production',
-                    entry: {
-                        vendors,
-                    },
                     resolve: {
                         alias: Object.values(packages).reduce((aliases, {name, root}) => {
-                            aliases[name] = root + '/' + pathBuild
+                            aliases[name] = path.resolve(root + '/' + pathBuild)
                             return aliases
                         }, {}),
                     },
                     optimization: {
                         runtimeChunk: typeof runtimeChunkBuild !== 'undefined' ? runtimeChunkBuild : 'single',
+                        concatenateModules: true,
+                        splitChunks: {usedExports: true},
+                        providedExports: true,
+                        usedExports: true,
                     },
                     devtool: devtoolBuild,
                     plugins: [

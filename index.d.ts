@@ -75,8 +75,6 @@ export interface AppsConfig {
 
     // used for the main `chunk`
     main: string | string[]
-    // added to the `vendor` chunk, included by default already `['react', 'react-dom']`
-    vendors?: string[]
     // additional entry chunks, `main` is also an `entry` default
     entries?: { [entry: string]: string | string[] }
 
@@ -177,7 +175,15 @@ export function packer(
 
         // executed  after all webpack builds and profiling have finished, not executed when serving
         // todo: correctly type `configs` with 'webpack options for build'
-        onAppBuild?: (appsConfigs: { [key: string]: { appConfig: AppsConfig } }, stats: MultiStats, configs: any[]) => Promise<void>
+        onAppBuild?: (
+            appsConfigs: { [key: string]: { appConfig: AppsConfig } },
+            stats: MultiStats,
+            configs: any[],
+        ) => Promise<void>
+        afterEsModules?: (
+            packages: { [packageName: string]: PackageConfig },
+            pathBuild: string,
+        ) => Promise<void>
     },
 ): Promise<[/* the execution commands */string[], /* elapsed time in ms */number]>
 

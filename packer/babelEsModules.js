@@ -1,5 +1,4 @@
 const path = require('path')
-const {createModulePackages} = require('./modulePackages')
 const {spawnBabel} = require('./babelHelper')
 
 function buildEsModule(name, pkg, pathBuild, target) {
@@ -44,12 +43,3 @@ function buildEsModules(packages, pathBuild, targets = [
 }
 
 exports.buildEsModules = buildEsModules
-
-function buildEsModulesPackagesJson(packages, pathBuild) {
-    const packs = Object.keys(packages).map(pack =>
-        createModulePackages(path.resolve(packages[pack].root, pathBuild)),
-    )
-    return Promise.all(packs)
-}
-
-exports.buildEsModulesPackagesJson = buildEsModulesPackagesJson
