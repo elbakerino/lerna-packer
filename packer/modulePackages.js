@@ -81,22 +81,28 @@ const copyRootPackageJson = (transformer = undefined) => (packages, pathBuild) =
         const buildPath = path.resolve(packages[pack].root, pathBuild)
         const packageJsonPath = path.resolve(packages[pack].root, 'package.json')
         const packageJsonBuild = path.resolve(buildPath, 'package.json')
-        fs.stat(packageJsonPath, (err) => {
-            if(err) {
-                return
-            }
-            fs.readFile(packageJsonPath, (err, file) => {
+        return new Promise((resolve, reject) => {
+            fs.stat(packageJsonPath, (err) => {
                 if(err) {
-                    console.error('Error reading package.json', packageJsonPath, err)
+                    resolve()
                     return
                 }
-                const packageJson = JSON.parse(file.toString())
-                fs.writeFile(packageJsonBuild, JSON.stringify(transformer ? transformer({packageJson, package: pack}) : packageJson, null, 4), (err) => {
+                fs.readFile(packageJsonPath, (err, file) => {
                     if(err) {
-                        console.error('! Failed writing package.json', err)
+                        console.error('Error reading package.json', packageJsonPath, err)
+                        reject()
                         return
                     }
-                    console.log('Copied', packageJsonBuild)
+                    const packageJson = JSON.parse(file.toString())
+                    fs.writeFile(packageJsonBuild, JSON.stringify(transformer ? transformer({packageJson, package: pack}) : packageJson, null, 4), (err) => {
+                        if(err) {
+                            console.error('! Failed writing package.json', err)
+                            reject()
+                            return
+                        }
+                        console.log('Copied', packageJsonBuild)
+                        resolve()
+                    })
                 })
             })
         })
