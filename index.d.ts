@@ -151,6 +151,14 @@ export interface PackageConfig {
     // folder below `root`, that contains the code files, defaults to `src`, must be relative
     rootSrc?: string
     entry: string
+    babelTargets?: {
+        // min. empty string when directly in `dist` (`build` folder)
+        distSuffix: string
+        // babel args, except `entry` and `--out-dir` (supplied by script)
+        args: string[]
+    }[]
+    // indicate that no extra `esm` folder exists, use to filter in packageJson adjustments
+    esmOnly?: boolean
 }
 
 export interface PackerTargets {

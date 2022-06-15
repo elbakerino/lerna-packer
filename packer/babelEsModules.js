@@ -29,14 +29,38 @@ function buildEsModule(name, pkg, pathBuild, target) {
 }
 
 function buildEsModules(packages, pathBuild, targets = [
-    {distSuffix: '', args: ['--env-name', 'cjs', '--copy-files', '--extensions', '.ts', '--extensions', '.tsx', '--extensions', '.js', '--extensions', '.jsx', '--ignore', '**/*.d.ts']},
-    {distSuffix: '/esm', args: ['--extensions', '.ts', '--extensions', '.tsx', '--extensions', '.js', '--extensions', '.jsx', '--ignore', '**/*.d.ts']},
+    {
+        distSuffix: '',
+        args: [
+            '--env-name', 'cjs', '--no-comments', // '--copy-files',
+            '--extensions', '.ts', '--extensions', '.tsx', '--extensions', '.js', '--extensions', '.jsx',
+            '--ignore', '**/*.d.ts',
+            '--ignore', '**/*.test.tsx', '--ignore', '**/*.test.ts', '--ignore', '**/*.test.js',
+        ],
+    },
+    {
+        distSuffix: '/esm', args: [
+            '--no-comments',
+            '--extensions', '.ts', '--extensions', '.tsx', '--extensions', '.js', '--extensions', '.jsx',
+            '--ignore', '**/*.d.ts',
+            '--ignore', '**/*.test.tsx', '--ignore', '**/*.test.ts', '--ignore', '**/*.test.js',
+        ],
+    },
 ]) {
     const babels = []
     Object.keys(packages).forEach(pack => {
-        babels.push(
-            ...targets.map(target => buildEsModule(pack, packages[pack], pathBuild, target)),
-        )
+        if(packages[pack].babelTargets) {
+            if(packages[pack].babelTargets.length === 0) {
+                throw new Error('`babelTargets` set on package must not be empty, is empty in `' + pack + '`')
+            }
+            babels.push(
+                ...packages[pack].babelTargets.map(target => buildEsModule(pack, packages[pack], pathBuild, target)),
+            )
+        } else {
+            babels.push(
+                ...targets.map(target => buildEsModule(pack, packages[pack], pathBuild, target)),
+            )
+        }
     })
 
     return Promise.all(babels)

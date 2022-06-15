@@ -1,6 +1,6 @@
 {
     "name": "lerna-packer",
-    "version": "0.6.1",
+    "version": "0.6.2",
     "description": "React multi-app and package build handling for lerna monorepo.",
     "keywords": [
         "lerna",
@@ -12,7 +12,7 @@
     "typings": "./index.d.ts",
     "main": "index.js",
     "scripts": {},
-    "author": "Michael Becker, https://mlbr.xyz",
+    "author": "Michael Becker, https://i-am-digital.eu",
     "license": "MIT",
     "repository": {
         "type": "git",

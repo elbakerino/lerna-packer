@@ -18,7 +18,7 @@ React multi-app and package build handling for [lerna](https://github.com/lerna/
 
 > **experimental**, fix the version without any modifier
 
-Add `packerConfig.js` with configs for apps and packages (component libraries).
+Add `packerConfig.js` with configs for apps and packages (e.g. component libraries, shared universal JS).
 
 > [check typescript definition](https://github.com/elbakerino/lerna-packer/blob/master/index.d.ts) for full configuration options
 
@@ -248,7 +248,7 @@ Add the following part into `package.json` for fatal errors on warnings for esli
 
 Add `.eslintrc`, `tsconfig.json`, `jest.config.js` in root/packages/package-dirs like wanted.
 
-Used by, check the `packerConfig.js` there:
+**Usage examples, check the `packerConfig.js` there:**
 
 - [UI Schema](https://github.com/ui-schema/ui-schema)
 - [Control UI](https://github.com/control-ui/control-ui)
@@ -260,7 +260,7 @@ This project is free software distributed under the **MIT License**.
 
 See: [LICENSE](LICENSE).
 
-© 2022 [Michael Becker](https://mlbr.xyz)
+© 2022 [Michael Becker](https://i-am-digital.eu)
 
 ### Contributors
 

@@ -7,7 +7,7 @@ function buildNodePackage(
     src,
     pathBuild,
     watch = false,
-    babelArgs = ['--env-name', 'node', '--copy-files', '--extensions', '.ts', '--extensions', '.js', '--ignore', '**/*.d.ts'],
+    babelArgs = ['--env-name', 'node', '--extensions', '.ts', '--extensions', '.js', '--ignore', '**/*.d.ts'],
 ) {
     return new Promise((resolve, reject) => {
         const dist = path.resolve(root, pathBuild)
