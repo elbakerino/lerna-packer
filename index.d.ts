@@ -159,6 +159,8 @@ export interface PackageConfig {
     }[]
     // indicate that no extra `esm` folder exists, use to filter in packageJson adjustments
     esmOnly?: boolean
+    // EXPERIMENTAL start the babel processes for this project in watch mode
+    doServeWatch?: boolean
 }
 
 export interface PackerTargets {
@@ -191,6 +193,7 @@ export function packer(
         afterEsModules?: (
             packages: { [packageName: string]: PackageConfig },
             pathBuild: string,
+            isServing?: boolean,
         ) => Promise<void>
     },
 ): Promise<[/* the execution commands */string[], /* elapsed time in ms */number]>

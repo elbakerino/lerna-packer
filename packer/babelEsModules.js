@@ -1,52 +1,86 @@
 const path = require('path')
 const {spawnBabel} = require('./babelHelper')
+const fs = require('fs')
 
-function buildEsModule(name, pkg, pathBuild, target) {
+function buildEsModule(
+    name, pkg,
+    pathBuild, target,
+    isServing = false,
+    cb,
+) {
+    try {
+        fs.statSync(path.resolve(pkg.root, pathBuild))
+    } catch(e) {
+        console.log(`[${name}, babel buildEsModules] creating package folder: ${path.resolve(pkg.root, pathBuild)}`)
+        fs.mkdirSync(path.resolve(pkg.root, pathBuild))
+    }
     return new Promise((resolve, reject) => {
+        if(isServing && !pkg.doServeWatch) {
+            // console.log(`[${name}, babel buildEsModules] skipped package, no babel doServeWatch`)
+            resolve()
+            return
+        }
         const entry = pkg.entry
         const dist = path.resolve(pkg.root, pathBuild + target.distSuffix)
 
         let args = [entry, ...target.args, '--out-dir', dist]
-
-        if(-1 === process.argv.indexOf('--clean')) {
-            let babel = spawnBabel(args)
-            babel.stdout.on('data', (data) => {
-                process.stdout.write(`[${name}, babel buildEsModules] ${data}`)
-            })
-
-            babel.stderr.on('data', (data) => {
-                process.stderr.write(`[${name}, babel buildEsModules] ERROR: ${data}`)
-            })
-            babel.on('exit', code => {
-                if(code !== 0) {
-                    reject(`(${name}) babel buildEsModule transpilation failed: ${code}`)
-                } else {
-                    resolve()
-                }
-            })
+        if(isServing) {
+            args.push('-w')
         }
+
+        let babel = spawnBabel(args)
+        babel.stdout.on('data', (data) => {
+            process.stdout.write(`[${name}, babel buildEsModules] ${data}`)
+            if(isServing) {
+                // executing `afterEsModules` only for the changed package
+                cb({[name]: pkg}, pathBuild, isServing)
+            }
+        })
+
+        babel.stderr.on('data', (data) => {
+            process.stderr.write(`[${name}, babel buildEsModules] ERROR: ${data}`)
+        })
+        babel.on('exit', code => {
+            if(isServing) {
+                if(code !== 0) {
+                    console.log(`(${name}) babel buildEsModule transpilation failure: ${code}`)
+                    return
+                }
+                return
+            }
+            if(code !== 0) {
+                reject(`(${name}) babel buildEsModule transpilation failed: ${code}`)
+            } else {
+                resolve()
+            }
+        })
     })
 }
 
-function buildEsModules(packages, pathBuild, targets = [
-    {
-        distSuffix: '',
-        args: [
-            '--env-name', 'cjs', '--no-comments', // '--copy-files',
-            '--extensions', '.ts', '--extensions', '.tsx', '--extensions', '.js', '--extensions', '.jsx',
-            '--ignore', '**/*.d.ts',
-            '--ignore', '**/*.test.tsx', '--ignore', '**/*.test.ts', '--ignore', '**/*.test.js',
-        ],
-    },
-    {
-        distSuffix: '/esm', args: [
-            '--no-comments',
-            '--extensions', '.ts', '--extensions', '.tsx', '--extensions', '.js', '--extensions', '.jsx',
-            '--ignore', '**/*.d.ts',
-            '--ignore', '**/*.test.tsx', '--ignore', '**/*.test.ts', '--ignore', '**/*.test.js',
-        ],
-    },
-]) {
+function buildEsModules(
+    packages, pathBuild,
+    targets = [
+        {
+            distSuffix: '',
+            args: [
+                '--env-name', 'cjs', '--no-comments', // '--copy-files',
+                '--extensions', '.ts', '--extensions', '.tsx', '--extensions', '.js', '--extensions', '.jsx',
+                '--ignore', '**/*.d.ts',
+                '--ignore', '**/*.test.tsx', '--ignore', '**/*.test.ts', '--ignore', '**/*.test.js',
+            ],
+        },
+        {
+            distSuffix: '/esm', args: [
+                '--no-comments',
+                '--extensions', '.ts', '--extensions', '.tsx', '--extensions', '.js', '--extensions', '.jsx',
+                '--ignore', '**/*.d.ts',
+                '--ignore', '**/*.test.tsx', '--ignore', '**/*.test.ts', '--ignore', '**/*.test.js',
+            ],
+        },
+    ],
+    isServing = false,
+    cb = () => Promise.resolve(),
+) {
     const babels = []
     Object.keys(packages).forEach(pack => {
         if(packages[pack].babelTargets) {
@@ -54,16 +88,20 @@ function buildEsModules(packages, pathBuild, targets = [
                 throw new Error('`babelTargets` set on package must not be empty, is empty in `' + pack + '`')
             }
             babels.push(
-                ...packages[pack].babelTargets.map(target => buildEsModule(pack, packages[pack], pathBuild, target)),
+                ...packages[pack].babelTargets.map(target => buildEsModule(pack, packages[pack], pathBuild, target, isServing, cb)),
             )
         } else {
             babels.push(
-                ...targets.map(target => buildEsModule(pack, packages[pack], pathBuild, target)),
+                ...targets.map(target => buildEsModule(pack, packages[pack], pathBuild, target, isServing, cb)),
             )
         }
     })
 
     return Promise.all(babels)
+        .then(() => {
+            if(isServing) return
+            return cb(packages, pathBuild, isServing)
+        })
 }
 
 exports.buildEsModules = buildEsModules

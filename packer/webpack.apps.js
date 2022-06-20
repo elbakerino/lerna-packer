@@ -8,6 +8,7 @@ const path = require('path')
 
 const buildAppConfig = (
     main, entries, dist, root, template, {
+        publicPath = undefined,
         cacheGroups = undefined,
         htmlWebpackPluginOptions = {},
         minify = false,
@@ -22,6 +23,7 @@ const buildAppConfig = (
         filename: 'assets/[name].[fullhash:8].js',
         path: dist,
         chunkFilename: 'assets/[name].chunk.[fullhash:8].js',
+        publicPath: publicPath,
     },
     performance: {
         hints: false,
@@ -85,25 +87,28 @@ const buildAppConfig = (
         },
     },
     plugins: [
-        ...(template ? [new HtmlWebpackPlugin({
-            inject: true,
-            template: template,
-            ...(minify ? {
-                minify: {
-                    removeComments: true,
-                    collapseWhitespace: true,
-                    removeRedundantAttributes: true,
-                    useShortDoctype: true,
-                    removeEmptyAttributes: true,
-                    removeStyleLinkTypeAttributes: true,
-                    keepClosingSlash: true,
-                    minifyJS: true,
-                    minifyCSS: true,
-                    minifyURLs: true,
-                },
-            } : {}),
-            ...htmlWebpackPluginOptions,
-        })] : []),
+        ...(template ? [
+            new HtmlWebpackPlugin({
+                inject: true,
+                template: template,
+                publicPath: publicPath,
+                ...(minify ? {
+                    minify: {
+                        removeComments: true,
+                        collapseWhitespace: true,
+                        removeRedundantAttributes: true,
+                        useShortDoctype: true,
+                        removeEmptyAttributes: true,
+                        removeStyleLinkTypeAttributes: true,
+                        keepClosingSlash: true,
+                        minifyJS: true,
+                        minifyCSS: true,
+                        minifyURLs: true,
+                    },
+                } : {}),
+                ...htmlWebpackPluginOptions,
+            }),
+        ] : []),
     ],
 })
 
@@ -153,6 +158,7 @@ const buildAppPair = (
                 ),
                 buildAppConfig(
                     main, entries, dist, root, template, {
+                        publicPath: publicPath,
                         cacheGroups: cacheGroups,
                         htmlWebpackPluginOptions: htmlWebpackPluginOptions,
                         minify: false,
@@ -221,6 +227,7 @@ const buildAppPair = (
                 ),
                 buildAppConfig(
                     main, entries, dist, root, template, {
+                        publicPath: publicPath,
                         cacheGroups: cacheGroups,
                         htmlWebpackPluginOptions: htmlWebpackPluginOptions,
                         minify: true,

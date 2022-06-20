@@ -33,11 +33,6 @@ const packer = async (
     const doBuildWebpack = doBuild && !!argv['webpack']
     const withProfile = !!argv['profile']
 
-    const appsConfigs = {}
-    for(let app in apps) {
-        appsConfigs[app] = buildAppPair(apps[app], packages, pathBuild)
-    }
-
     if(doClean) {
         // clean dists
 
@@ -100,83 +95,95 @@ module.exports = {
     if(doBuildBabel || doBuildWebpack) {
         // production build
         l('Start Production build')
+    }
 
-        const packagesNames = Object.keys(packages)
-        if(doBuildBabel && packagesNames.length > 0) {
-            l('Start ESM build for ' + packagesNames.length + ' modules: `' + packagesNames.join(', ') + '`')
-            await buildEsModules(packages, pathBuild, babelTargets)
-                .then(() => {
-                    if(!afterEsModules) {
-                        return Promise.resolve()
-                    }
-                    l('Start ESM build finalizing')
-                    return afterEsModules(packages, pathBuild)
-                        .then(() => {
-                            l('Done ESM build finalize')
-                        })
-                        .catch(err => {
-                            l('Done finalizing ESM build', err)
-                            return Promise.reject('afterEsModules failed')
-                        })
-                })
-                .then(() => {
-                    l('Done ESM build')
-                })
-                .catch(err => {
-                    l('Error for ESM build', err)
-                    return Promise.reject('packages ESM build failure')
-                })
+    const packagesNames = Object.keys(packages)
+    if((doServe || doBuildBabel) && packagesNames.length > 0) {
+        l('Start ESM ' + (doServe ? 'build & watch' : 'build') + ' for ' + packagesNames.length + ' modules: `' + packagesNames.join(', ') + '`')
+        const esmPromise = buildEsModules(
+            packages, pathBuild, babelTargets, doServe,
+            (packages2, pathBuild2, doServe2) => {
+                if(!afterEsModules) {
+                    return Promise.resolve()
+                }
+                l('Start ESM build finalizing')
+                return afterEsModules(packages2, pathBuild2, doServe2)
+                    .then(() => {
+                        l('Done ESM build finalize')
+                    })
+                    .catch(err => {
+                        l('Done finalizing ESM build', err)
+                        return Promise.reject('afterEsModules failed')
+                    })
+            },
+        )
+            .then(() => {
+                l('Done ESM build')
+            })
+            .catch(err => {
+                l('Error for ESM build', err)
+                return Promise.reject('packages ESM build failure')
+            })
+        if(doBuildBabel) {
+            await esmPromise
+        } else if(doServe) {
+            esmPromise.then(() => null)
+        }
+    }
+
+    const appsConfigs = {}
+    for(let app in apps) {
+        appsConfigs[app] = buildAppPair(apps[app], packages, pathBuild)
+    }
+
+    if(doBuildWebpack && Object.keys(apps).length) {
+        console.log('')
+        l('Starting webpack build for apps `' + (Object.keys(appsConfigs).join(', ')) + '`')
+        // get all `build` webpack configurations, for each app, executed by one `webpack`
+        const configs = []
+        for(let app in appsConfigs) {
+            if(!appsConfigs[app].build) {
+                l('App has no serve config: ', app)
+                return Promise.reject()
+            }
+
+            if(typeof appsConfigs[app].build === 'function') {
+                appsConfigs[app].build = appsConfigs[app].build()
+            }
+
+            if(typeof appsConfigs[app].build !== 'object') {
+                l('App has invalid serve config: ', app, appsConfigs[app].build)
+                return Promise.reject()
+            }
+
+            configs.push(appsConfigs[app].build)
+
+            if(appsConfigs[app].appConfig.webpackBuilds) {
+                configs.push(...appsConfigs[app].appConfig.webpackBuilds)
+            }
         }
 
-        if(doBuildWebpack) {
-            console.log('')
-            l('Starting webpack build for apps `' + (Object.keys(appsConfigs).join(', ')) + '`')
-            // get all `build` webpack configurations, for each app, executed by one `webpack`
-            const configs = []
-            for(let app in appsConfigs) {
-                if(!appsConfigs[app].build) {
-                    l('App has no serve config: ', app)
-                    return Promise.reject()
-                }
-
-                if(typeof appsConfigs[app].build === 'function') {
-                    appsConfigs[app].build = appsConfigs[app].build()
-                }
-
-                if(typeof appsConfigs[app].build !== 'object') {
-                    l('App has invalid serve config: ', app, appsConfigs[app].build)
-                    return Promise.reject()
-                }
-
-                configs.push(appsConfigs[app].build)
-
-                if(appsConfigs[app].appConfig.webpackBuilds) {
-                    configs.push(...appsConfigs[app].appConfig.webpackBuilds)
-                }
-            }
-
-            if(configs.length > 0) {
-                configs.forEach((c) => {
-                    // check created webpack configs, e.g.:
-                    // console.log(c.module.rules);
-                    // console.log(Object.keys(c.entry));
+        if(configs.length > 0) {
+            configs.forEach((c) => {
+                // check created webpack configs, e.g.:
+                // console.log(c.module.rules);
+                // console.log(Object.keys(c.entry));
+            })
+            await buildWebpack(configs, apps, withProfile, root, onAppBuild)
+                .then((stats) => {
+                    if(onAppBuild) {
+                        l('webpack onAppBuild run')
+                        return onAppBuild(appsConfigs, stats, configs)
+                    }
                 })
-                await buildWebpack(configs, apps, withProfile, root, onAppBuild)
-                    .then((stats) => {
-                        if(onAppBuild) {
-                            l('webpack onAppBuild run')
-                            return onAppBuild(appsConfigs, stats, configs)
-                        }
-                    })
-                    .then(() => {
-                        if(onAppBuild) {
-                            l('webpack onAppBuild done')
-                        }
-                        return null
-                    })
+                .then(() => {
+                    if(onAppBuild) {
+                        l('webpack onAppBuild done')
+                    }
+                    return null
+                })
 
-                l('Done webpack build for apps `' + (Object.keys(apps).join(', ')) + '`')
-            }
+            l('Done webpack build for apps `' + (Object.keys(apps).join(', ')) + '`')
         }
     }
 
@@ -225,14 +232,14 @@ module.exports = {
         }
     }
 
-    if(doServe) {
+    if(doServe && Object.keys(apps).length) {
         if(doServe === true) l('Starting all Apps:')
         else l('Starting App `' + doServe + '`:')
 
-        let doServers = doServe !== true ? (Array.isArray(doServe) ? doServe : [doServe]) : false
-        let servers = []
+        const serveAppId = doServe !== true ? (Array.isArray(doServe) ? doServe : [doServe]) : false
+        const servers = []
         for(let app in appsConfigs) {
-            if(Array.isArray(doServers) && doServers.indexOf(app) === -1) {
+            if(Array.isArray(serveAppId) && serveAppId.indexOf(app) === -1) {
                 continue
             }
             if(appsConfigs[app].serve) {

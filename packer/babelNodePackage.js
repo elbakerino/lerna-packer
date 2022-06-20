@@ -18,23 +18,21 @@ function buildNodePackage(
         }
         args.push(...['--out-dir', dist])
 
-        if(-1 === process.argv.indexOf('--clean')) {
-            let babel = spawnBabel(args)
-            babel.stdout.on('data', (data) => {
-                process.stdout.write(`[${name}, babel buildNodePackage] ${data}`)
-            })
+        let babel = spawnBabel(args)
+        babel.stdout.on('data', (data) => {
+            process.stdout.write(`[${name}, babel buildNodePackage] ${data}`)
+        })
 
-            babel.stderr.on('data', (data) => {
-                process.stderr.write(`[${name}, babel buildNodePackage] ERROR: ${data}`)
-            })
-            babel.on('exit', code => {
-                if(code !== 0) {
-                    reject(`(${name}) babel buildNodePackage transpilation failed: ${code}`)
-                } else {
-                    resolve()
-                }
-            })
-        }
+        babel.stderr.on('data', (data) => {
+            process.stderr.write(`[${name}, babel buildNodePackage] ERROR: ${data}`)
+        })
+        babel.on('exit', code => {
+            if(code !== 0) {
+                reject(`(${name}) babel buildNodePackage transpilation failed: ${code}`)
+            } else {
+                resolve()
+            }
+        })
     })
 }
 
