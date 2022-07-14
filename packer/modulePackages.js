@@ -46,6 +46,7 @@ exports.createModulePackages = createModulePackages
 exports.transformForEsModule = ({level, root, dir}) => {
     return {
         sideEffects: false,
+        type: 'commonjs',
         module:
             path.join(
                 '../'.repeat(level + 1),

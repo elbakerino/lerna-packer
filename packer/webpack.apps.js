@@ -150,9 +150,11 @@ const buildAppPair = (
                         src: rootSrc,
                         minimize: false,
                         include: [
-                            Object.values(packages).map(({root, rootSrc = 'src'}) =>
-                                path.resolve(root, rootSrc),
-                            ),
+                            Object.values(packages)
+                                .filter(({doServeWatch}) => !doServeWatch)
+                                .map(({root, rootSrc = 'src'}) => {
+                                    return path.resolve(root, rootSrc)
+                                }),
                         ],
                     },
                 ),
@@ -168,8 +170,12 @@ const buildAppPair = (
                 {
                     mode: 'development',
                     resolve: {
-                        alias: Object.values(packages).reduce((aliases, {name, entry}) => {
-                            aliases[name] = entry
+                        alias: Object.values(packages).reduce((aliases, {name, root, entry, doServeWatch}) => {
+                            if(doServeWatch) {
+                                aliases[name] = path.resolve(root + '/' + pathBuild)
+                            } else {
+                                aliases[name] = entry
+                            }
                             return aliases
                         }, {}),
                     },

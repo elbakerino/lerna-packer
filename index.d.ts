@@ -159,7 +159,7 @@ export interface PackageConfig {
     }[]
     // indicate that no extra `esm` folder exists, use to filter in packageJson adjustments
     esmOnly?: boolean
-    // EXPERIMENTAL start the babel processes for this project in watch mode
+    // start the babel processes for this package in watch mode when serving apps/backends
     doServeWatch?: boolean
 }
 
