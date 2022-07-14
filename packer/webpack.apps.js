@@ -150,7 +150,7 @@ const buildAppPair = (
                         src: rootSrc,
                         minimize: false,
                         include: [
-                            Object.values(packages)
+                            ...Object.values(packages)
                                 .filter(({doServeWatch}) => !doServeWatch)
                                 .map(({root, rootSrc = 'src'}) => {
                                     return path.resolve(root, rootSrc)

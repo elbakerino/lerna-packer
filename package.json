@@ -1,6 +1,6 @@
 {
     "name": "lerna-packer",
-    "version": "0.6.5",
+    "version": "0.6.6",
     "description": "React multi-app and package build handling for lerna monorepo.",
     "keywords": [
         "lerna",

@@ -167,6 +167,11 @@ function getConfig(
                 formatter: require.resolve('react-dev-utils/eslintFormatter'),
                 eslintPath: require.resolve('eslint'),
                 emitWarning: !isProd,
+                context: context,
+                files: [
+                    path.join(context, src),
+                    ...include,
+                ],
                 //failOnError: true,
                 //failOnWarning: true,
             }),
