@@ -148,7 +148,6 @@ Add `babel.config.json` or similar:
         "@babel/plugin-proposal-export-default-from",
         "@babel/plugin-transform-runtime",
         "transform-es2015-template-literals",
-        "es6-promise",
         "react-loadable/babel",
         [
             "babel-plugin-named-asset-import",

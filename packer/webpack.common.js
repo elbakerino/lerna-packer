@@ -3,6 +3,7 @@
 const path = require('path')
 const isWsl = require('is-wsl')
 const TerserPlugin = require('terser-webpack-plugin')
+const ESLintPlugin = require('eslint-webpack-plugin')
 
 function getConfig(
     isProd = false,
@@ -22,23 +23,6 @@ function getConfig(
         module: {
             rules: [
                 {
-                    enforce: 'pre',
-                    test: /\.(js|jsx|ts|tsx)$/,
-                    //test: /\.(js|jsx|d\.ts)$/,
-                    include: [
-                        path.join(context, src),
-                        ...include,
-                    ],
-                    options: {
-                        cache: true,
-                        formatter: require.resolve('react-dev-utils/eslintFormatter'),
-                        eslintPath: require.resolve('eslint'),
-                        emitWarning: !isProd,
-                        //failOnError: true,
-                        //failOnWarning: true,
-                    },
-                    loader: require.resolve('eslint-loader'),
-                }, {
                     test: /\.(js|jsx|ts|tsx)$/,
                     include: [
                         path.join(context, src),
@@ -177,6 +161,16 @@ function getConfig(
                 }),
             ],
         },
+        plugins: [
+            new ESLintPlugin({
+                extensions: ['js', 'jsx', 'ts', 'tsx'],
+                formatter: require.resolve('react-dev-utils/eslintFormatter'),
+                eslintPath: require.resolve('eslint'),
+                emitWarning: !isProd,
+                //failOnError: true,
+                //failOnWarning: true,
+            }),
+        ],
     }
 }
 
