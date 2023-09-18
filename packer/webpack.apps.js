@@ -31,6 +31,10 @@ const buildAppConfig = (
     resolve: {
         // options for resolving module requests
         // (does not apply to resolving to loaders)
+        extensions: ['.tsx', '.ts', '.js', '.jsx'],
+        extensionAlias: {
+            '.js': ['.ts', '.js', '.tsx', '.jsx'],
+        },
         // todo: make as strict as possible, only include needed ones
         modules: [
             path.resolve(root, 'node_modules'),
@@ -229,6 +233,13 @@ const buildAppPair = (
                         context: root,
                         src: rootSrc,
                         minimize: true,
+                        include: [
+                            ...Object.values(packages)
+                                .filter(({doServeWatch}) => !doServeWatch)
+                                .map(({root, rootSrc = 'src'}) => {
+                                    return path.resolve(root, rootSrc)
+                                }),
+                        ],
                     },
                 ),
                 buildAppConfig(
@@ -243,8 +254,12 @@ const buildAppPair = (
                 {
                     mode: 'production',
                     resolve: {
-                        alias: Object.values(packages).reduce((aliases, {name, root}) => {
-                            aliases[name] = path.resolve(root + '/' + pathBuild)
+                        alias: Object.values(packages).reduce((aliases, {name, root, entry, doServeWatch}) => {
+                            if(doServeWatch) {
+                                aliases[name] = path.resolve(root + '/' + pathBuild)
+                            } else {
+                                aliases[name] = entry
+                            }
                             return aliases
                         }, {}),
                     },

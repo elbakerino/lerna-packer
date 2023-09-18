@@ -46,15 +46,18 @@ exports.createModulePackages = createModulePackages
 exports.transformForEsModule = ({level, root, dir}) => {
     return {
         sideEffects: false,
-        type: 'commonjs',
-        module:
-            path.join(
-                '../'.repeat(level + 1),
-                'esm',
-                dir.slice(root.length + 1).replace(/\\/g, '/').split(/\//g).join('/'),
-                'index.js',
-            ).replace(/\\/g, '/'),
-        typings: './index.d.ts',
+        type: 'module',
+        exports: {
+            import:
+                path.join(
+                    '../'.repeat(level + 1),
+                    'esm',
+                    dir.slice(root.length + 1).replace(/\\/g, '/').split(/\//g).join('/'),
+                    'index.js',
+                ).replace(/\\/g, '/'),
+            require: './index.js',
+            types: './index.d.ts',
+        },
     }
 }
 
