@@ -1,6 +1,6 @@
 {
     "name": "lerna-packer",
-    "version": "0.8.1",
+    "version": "0.8.2",
     "description": "React multi-app and package build handling for lerna monorepo.",
     "keywords": [
         "lerna",
@@ -44,7 +44,6 @@
         "@svgr/webpack": "^8.0.1",
         "@testing-library/jest-dom": "^6.5.0",
         "@testing-library/react": "^16.0.1",
-        "@types/testing-library__jest-dom": "^6.0.0",
         "@typescript-eslint/eslint-plugin": "^6.1.0",
         "@typescript-eslint/parser": "^6.1.0",
         "@babel/eslint-parser": "^7.22.9",
