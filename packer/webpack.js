@@ -61,9 +61,7 @@ function buildWebpack(configs, appsConfigs, withProfile, root, onAppBuild) {
                         resolve(stats)
                     })
                 } else {
-                    if(onAppBuild) {
-                        resolve(stats)
-                    }
+                    resolve(stats)
                 }
             }
         })

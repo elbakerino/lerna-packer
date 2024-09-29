@@ -169,18 +169,15 @@ module.exports = {
                 // console.log(c.module.rules);
                 // console.log(Object.keys(c.entry));
             })
-            await buildWebpack(configs, apps, withProfile, root, onAppBuild)
+            await buildWebpack(configs, apps, withProfile, root)
                 .then((stats) => {
                     if(onAppBuild) {
                         l('webpack onAppBuild run')
                         return onAppBuild(appsConfigs, stats, configs)
+                            .then(() => {
+                                l('webpack onAppBuild done')
+                            })
                     }
-                })
-                .then(() => {
-                    if(onAppBuild) {
-                        l('webpack onAppBuild done')
-                    }
-                    return null
                 })
 
             l('Done webpack build for apps `' + (Object.keys(apps).join(', ')) + '`')
