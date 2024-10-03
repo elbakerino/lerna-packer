@@ -86,8 +86,6 @@ function getConfig(
                             esModule: false,
                         },
                     }, {
-                        loader: 'extract-loader',
-                    }, {
                         loader: 'html-loader',
                         options: {
                             minimize: minimize,

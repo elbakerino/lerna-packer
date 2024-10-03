@@ -1,5 +1,5 @@
 const fs = require('fs')
-const rimraf = require('rimraf')
+const {rimraf} = require('rimraf')
 const path = require('path')
 
 const log = (prefix) => (message, ...err) => {
@@ -13,19 +13,19 @@ const log = (prefix) => (message, ...err) => {
 }
 exports.log = log
 
-const delDir = dir => (new Promise(((resolve) => {
+const delDir = dir => (new Promise(((resolve, reject) => {
     const l = log('clean-dir')
     if(fs.existsSync(dir)) {
         l('start for ' + dir)
-        rimraf(dir, (err) => {
-            if(err) {
+        rimraf(dir)
+            .then(() => {
+                l('done for ' + dir)
+                resolve()
+            })
+            .catch((err) => {
                 l('rimraf error while deleting ' + dir, err)
                 reject('delDir for ' + dir)
-                return
-            }
-            l('done for ' + dir)
-            resolve()
-        })
+            })
     } else {
         resolve()
     }
