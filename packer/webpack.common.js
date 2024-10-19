@@ -166,14 +166,13 @@ function getConfig(
                 extensions: ['js', 'jsx', 'ts', 'tsx'],
                 formatter: require.resolve('react-dev-utils/eslintFormatter'),
                 eslintPath: require.resolve('eslint'),
-                emitWarning: !isProd,
                 context: context,
                 files: [
                     path.join(context, src),
                     ...include,
                 ],
-                //failOnError: true,
-                //failOnWarning: true,
+                failOnError: isProd, // reload dev-server even if lint errors
+                failOnWarning: isProd, // fail CI for lint warnings
             }),
         ],
     }
