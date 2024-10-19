@@ -68,7 +68,7 @@ const buildAppConfig = (
             // its runtime that would otherwise be processed through "file" loader.
             // Also exclude `html` and `json` extensions so they get processed
             // by webpacks internal loaders.
-            exclude: [/\.(js|css|s[ac]ss|mjs|jsx|ts|tsx)$/, /\.html$/, /\.json$/],
+            exclude: [/\.(js|css|s[ac]ss|cjs|mjs|jsx|ts|tsx)$/, /\.html$/, /\.json$/],
             options: {
                 name: 'assets/media/[name].[contenthash:8].[ext]',
             },
