@@ -116,6 +116,12 @@ const buildAppConfig = (
     ],
 })
 
+/**
+ * @param {AppsConfig} appConfig
+ * @param {{ [k:string]: PackageConfig }} packages
+ * @param {string} pathBuild
+ * @return {{dist: string, appConfig: AppsConfig, serve: () => any, build: () => any}}
+ */
 const buildAppPair = (
     appConfig,
     packages,
@@ -141,6 +147,7 @@ const buildAppPair = (
         htmlWebpackPluginOptions,
         noParse,
         webpackConfig,
+        aliasPackagesBuild,
     } = appConfig
     return {
         dist,
@@ -153,12 +160,12 @@ const buildAppPair = (
                         context: root,
                         src: rootSrc,
                         minimize: false,
+                        hot: typeof devServer.hot !== 'undefined' ? devServer.hot : true,
                         include: [
                             ...Object.values(packages)
-                                .filter(({doServeWatch}) => !doServeWatch)
-                                .map(({root, rootSrc = 'src'}) => {
-                                    return path.resolve(root, rootSrc)
-                                }),
+                                // if aliasPackagesBuild is active for development, skip those with doServeWatch
+                                .filter(({doServeWatch}) => !(aliasPackagesBuild === 'always' || aliasPackagesBuild === 'development') || !doServeWatch)
+                                .map(({entry}) => entry),
                         ],
                     },
                 ),
@@ -175,7 +182,7 @@ const buildAppPair = (
                     mode: 'development',
                     resolve: {
                         alias: Object.values(packages).reduce((aliases, {name, root, entry, doServeWatch}) => {
-                            if(doServeWatch) {
+                            if((aliasPackagesBuild === 'always' || aliasPackagesBuild === 'development') && doServeWatch) {
                                 aliases[name] = path.resolve(root + '/' + pathBuild)
                             } else {
                                 aliases[name] = entry
@@ -184,6 +191,7 @@ const buildAppPair = (
                         }, {}),
                     },
                     devServer: {
+                        ...devServer || {},
                         static: typeof devServer.static === 'object' ? {
                             ...devServer.static,
                             directory: contentBase,
@@ -196,19 +204,11 @@ const buildAppPair = (
                             ...(devServer.static || []),
                         ],
                         client: {
+                            ...devServer.client || {},
                             logging: devServer.client && devServer.client.logging ? devServer.client.logging : 'info',
-                            overlay: devServer.client && typeof devServer.client.overlay !== 'undefined' ? devServer.client.overlay : undefined,
-                            progress: devServer.client && typeof devServer.client.progress !== 'undefined' ? devServer.client.progress : undefined,
                         },
-                        host: devServer.host ? devServer.host : undefined,
-                        headers: devServer.headers ? devServer.headers : undefined,
-                        open: typeof devServer.open !== 'undefined' ? devServer.open : undefined,
-                        proxy: devServer.proxy ? devServer.proxy : undefined,
-                        compress: true,
+                        compress: typeof devServer.compress !== 'undefined' ? devServer.compress : true,
                         hot: typeof devServer.hot !== 'undefined' ? devServer.hot : true,
-                        http2: typeof devServer.http2 !== 'undefined' ? devServer.http2 : undefined,
-                        https: typeof devServer.https !== 'undefined' ? devServer.https : undefined,
-                        magicHtml: typeof devServer.magicHtml !== 'undefined' ? devServer.magicHtml : undefined,
                         historyApiFallback: typeof devServer.historyApiFallback !== 'undefined' ? devServer.historyApiFallback : true,
                         port: port,
                     },
@@ -235,10 +235,8 @@ const buildAppPair = (
                         minimize: true,
                         include: [
                             ...Object.values(packages)
-                                .filter(({doServeWatch}) => !doServeWatch)
-                                .map(({root, rootSrc = 'src'}) => {
-                                    return path.resolve(root, rootSrc)
-                                }),
+                                .filter(() => !aliasPackagesBuild || (aliasPackagesBuild !== 'always' && aliasPackagesBuild !== 'production'))
+                                .map(({entry}) => entry),
                         ],
                     },
                 ),
@@ -254,8 +252,8 @@ const buildAppPair = (
                 {
                     mode: 'production',
                     resolve: {
-                        alias: Object.values(packages).reduce((aliases, {name, root, entry, doServeWatch}) => {
-                            if(doServeWatch) {
+                        alias: Object.values(packages).reduce((aliases, {name, root, entry}) => {
+                            if(aliasPackagesBuild === 'always' || aliasPackagesBuild === 'production') {
                                 aliases[name] = path.resolve(root + '/' + pathBuild)
                             } else {
                                 aliases[name] = entry

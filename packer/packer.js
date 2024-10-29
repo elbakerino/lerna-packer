@@ -1,4 +1,3 @@
-const fs = require('fs')
 const path = require('path')
 const argv = require('minimist')(process.argv.slice(2))
 const {delDir, log} = require('./tools')
@@ -8,7 +7,7 @@ const {startNodemon} = require('./nodemon')
 const {buildWebpack, serveWebpack} = require('./webpack')
 const {buildAppPair} = require('./webpack.apps')
 
-const packer = async (
+const packer = async(
     {
         apps = {},
         packages = {},
@@ -16,8 +15,8 @@ const packer = async (
     },
     root,
     {
-        babelTargets = undefined,
-        pathPackages = 'packages',
+        webpackStatsConfig,
+        // todo: move into `PackageConfig`
         pathBuild = 'build',
         onAppBuild = undefined,
         afterEsModules = undefined,
@@ -64,34 +63,6 @@ const packer = async (
                 : undefined)
     }
 
-    if(doBuildWebpack || doServe) {
-        await new Promise((resolve, reject) => {
-            const webpackPartialRoot = path.join(root, pathPackages)
-            const webpackPartialFile = path.join(webpackPartialRoot, 'webpackPartialConfig.js')
-            const webpackPartial = `
-const path = require('path');
-
-module.exports = {
-    resolve: {
-        alias: {
-            ${Object.values(packages).reduce((aliases, {name, entry}) =>
-                    aliases + '\'' + [name] + '\': path.resolve(__dirname, \'.' + entry.replace(webpackPartialRoot, '').replace(/\\/g, '/') + '\'),\r\n'
-                , '')}
-        }
-    }
-}`
-            fs.writeFile(webpackPartialFile, webpackPartial, err => {
-                if(err) {
-                    l('Saving webpackPartial.config.json failed', err)
-                    reject(err)
-                    return
-                }
-                l('Updated webpackPartial.config.json')
-                resolve()
-            })
-        })
-    }
-
     if(doBuildBabel || doBuildWebpack) {
         // production build
         l('Start Production build')
@@ -101,7 +72,7 @@ module.exports = {
     if((doServe || doBuildBabel) && packagesNames.length > 0) {
         l('Start ESM ' + (doServe ? 'build & watch' : 'build') + ' for ' + packagesNames.length + ' modules: `' + packagesNames.join(', ') + '`')
         const esmPromise = buildEsModules(
-            packages, pathBuild, babelTargets, doServe,
+            packages, pathBuild, undefined, doServe,
             (packages2, pathBuild2, doServe2) => {
                 if(!afterEsModules) {
                     return Promise.resolve()
@@ -169,7 +140,7 @@ module.exports = {
                 // console.log(c.module.rules);
                 // console.log(Object.keys(c.entry));
             })
-            await buildWebpack(configs, apps, withProfile, root)
+            await buildWebpack(configs, webpackStatsConfig, withProfile, root)
                 .then((stats) => {
                     if(onAppBuild) {
                         l('webpack onAppBuild run')
@@ -253,6 +224,7 @@ module.exports = {
             l('No apps starting, no defined or activated..')
         }
     }
+
     const execs = {
         doServe,
         doClean,
@@ -262,7 +234,6 @@ module.exports = {
         doBuildWebpack,
         withProfile,
     }
-
 
     const elapsedTime = process.hrtime(startTime)[1] / 1000000 // in ms
     return Promise.resolve([

@@ -4,12 +4,15 @@ const path = require('path')
 const isWsl = require('is-wsl')
 const TerserPlugin = require('terser-webpack-plugin')
 const ESLintPlugin = require('eslint-webpack-plugin')
+const reactRefreshBabel = require('react-refresh/babel')
+const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
 
 function getConfig(
     isProd = false,
     {
         context = '',
         src,
+        hot = false,
         minimize = true,
         // babelPresets = [],
         // babelPlugins = [],
@@ -44,6 +47,7 @@ function getConfig(
                             // See #6846 for context on why cacheCompression is disabled
                             cacheCompression: false,
                             compact: minimize,
+                            plugins: isProd || !hot ? [] : [reactRefreshBabel],
                         },
                     }],
                 }, /*{
@@ -160,6 +164,11 @@ function getConfig(
             ],
         },
         plugins: [
+            ...!isProd && hot ? [new ReactRefreshWebpackPlugin({
+                exclude: [
+                    /node_modules/,
+                ],
+            })] : [],
             new ESLintPlugin({
                 extensions: ['js', 'jsx', 'ts', 'tsx'],
                 formatter: require.resolve('react-dev-utils/eslintFormatter'),

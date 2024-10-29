@@ -57,27 +57,46 @@ function buildEsModule(
     })
 }
 
+const babelTargetsArgsLegacy = {
+    cjs: [
+        '--env-name', 'cjs', '--no-comments', // '--copy-files', '--no-copy-ignored',
+        '--extensions', '.ts', '--extensions', '.tsx', '--extensions', '.js', '--extensions', '.jsx',
+        '--ignore', '**/*.d.ts',
+        '--ignore', '**/*.test.tsx', '--ignore', '**/*.test.ts', '--ignore', '**/*.test.js',
+    ],
+    esm: [
+        '--no-comments',
+        '--extensions', '.ts', '--extensions', '.tsx', '--extensions', '.js', '--extensions', '.jsx',
+        '--ignore', '**/*.d.ts',
+        '--ignore', '**/*.test.tsx', '--ignore', '**/*.test.ts', '--ignore', '**/*.test.js',
+    ],
+}
+
+const babelTargetsLegacyCjsFirst = exports.babelTargetsLegacyCjsFirst = [
+    {
+        distSuffix: '',
+        args: babelTargetsArgsLegacy.cjs,
+    },
+    {
+        distSuffix: '/esm',
+        args: babelTargetsArgsLegacy.esm,
+    },
+]
+
+const babelTargetsLegacyEsmFirst = exports.babelTargetsLegacyEsmFirst = [
+    {
+        distSuffix: '/cjs',
+        args: babelTargetsArgsLegacy.cjs,
+    },
+    {
+        distSuffix: '',
+        args: babelTargetsArgsLegacy.esm,
+    },
+]
+
 function buildEsModules(
     packages, pathBuild,
-    targets = [
-        {
-            distSuffix: '',
-            args: [
-                '--env-name', 'cjs', '--no-comments', // '--copy-files',
-                '--extensions', '.ts', '--extensions', '.tsx', '--extensions', '.js', '--extensions', '.jsx',
-                '--ignore', '**/*.d.ts',
-                '--ignore', '**/*.test.tsx', '--ignore', '**/*.test.ts', '--ignore', '**/*.test.js',
-            ],
-        },
-        {
-            distSuffix: '/esm', args: [
-                '--no-comments',
-                '--extensions', '.ts', '--extensions', '.tsx', '--extensions', '.js', '--extensions', '.jsx',
-                '--ignore', '**/*.d.ts',
-                '--ignore', '**/*.test.tsx', '--ignore', '**/*.test.ts', '--ignore', '**/*.test.js',
-            ],
-        },
-    ],
+    targets = babelTargetsLegacyCjsFirst,
     isServing = false,
     cb = () => Promise.resolve(),
 ) {

@@ -4,9 +4,14 @@ const webpack = require('webpack')
 const WebpackDevServer = require('webpack-dev-server')
 const {log} = require('./tools')
 
-function logStats(stats) {
+/**
+ * @param {import('webpack').MultiStats} stats
+ * @param {import('webpack').StatsOptions} options
+ */
+function logStats(stats, options) {
     process.stdout.write(stats.toString({
         colors: true,
+        ...typeof options === 'string' ? {preset: options} : options || {},
     }) + '\n')
 }
 
@@ -22,7 +27,7 @@ function serveWebpack(appId, config) {
     return new Promise((resolve, reject) => {
         const server = new WebpackDevServer(config.devServer, webpack(config))
 
-        server.start(config.devServer.port, 'localhost')
+        server.start()
             .then(() => {
                 // todo: detect https from env/config:
                 l('listening at http://localhost:' + config.devServer.port + ' for app `' + appId + '`')
@@ -35,7 +40,7 @@ function serveWebpack(appId, config) {
     })
 }
 
-function buildWebpack(configs, appsConfigs, withProfile, root, onAppBuild) {
+function buildWebpack(configs, statsConfig, withProfile, root) {
     return new Promise((resolve, reject) => {
         webpack(configs, (err, stats) => {
             if(err) {
@@ -47,17 +52,23 @@ function buildWebpack(configs, appsConfigs, withProfile, root, onAppBuild) {
             }
 
             if(stats.hasErrors()) {
-                logStats(stats)
+                logStats(stats, statsConfig)
                 console.error('Compilation has errors!')
                 reject()
             } else if(stats.hasWarnings()) {
-                logStats(stats)
+                logStats(stats, statsConfig)
                 console.error('Compilation has warnings!')
                 reject()
             } else {
-                logStats(stats)
+                if(typeof statsConfig === 'boolean' && !statsConfig) {
+                    resolve(stats)
+                    return
+                }
+
+                logStats(stats, statsConfig)
+
                 if(withProfile) {
-                    fs.writeFile(path.join(root, '/profile.json'), JSON.stringify(stats.toJson(), null, 4), () => {
+                    fs.writeFile(path.join(root, '/profile.json'), JSON.stringify(stats.toJson(statsConfig), null, 4), () => {
                         resolve(stats)
                     })
                 } else {

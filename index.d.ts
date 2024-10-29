@@ -1,55 +1,10 @@
-import { Configuration } from 'webpack'
+import { Configuration as WebpackConfiguration, MultiStats, StatsOptions as WebpackStatsOptions } from 'webpack'
+import { Configuration as WebpackDevServerConfiguration } from 'webpack-dev-server'
 import { Options } from 'html-webpack-plugin'
 
-export { webpack, MultiStats, Configuration } from 'webpack'
+import webpack = require('webpack')
 
-export interface AppsConfigDevServerStatic {
-    directory: string
-    publicPath?: string
-    // https://webpack.js.org/configuration/dev-server/#serveindex
-    serveIndex?: boolean | object
-    // https://webpack.js.org/configuration/dev-server/#staticoptions
-    staticOptions?: object
-    // https://webpack.js.org/configuration/dev-server/#watch
-    watch?: boolean | object
-}
-
-export interface AppsConfigDevServer {
-    client?: {
-        overlay?: boolean,
-        progress?: boolean,
-        logging?: 'log' | 'info' | 'warn' | 'error' | 'none' | 'verbose'
-    }
-    static?: Partial<AppsConfigDevServerStatic> | AppsConfigDevServerStatic[]
-    https?: boolean | {
-        key: string
-        cert: string
-        ca: string
-        pfx?: string
-        passphrase?: string
-        requestCert?: string
-    }
-    historyApiFallback?: boolean | {
-        rewrites?: {
-            from: RegExp
-            to: string
-        }[]
-        disableDotRule?: boolean
-    }
-    host?: 'local-ip' | 'local-ipv4' | 'local-ipv6' | string
-    http2?: boolean
-    magicHtml?: boolean
-    headers?: {
-        [h: string]: string
-    } | {
-        key: string
-        value: string
-    }[]
-    open?: boolean
-    hot?: boolean
-    // https://webpack.js.org/configuration/dev-server/#devserverproxy
-    proxy?: object
-}
+export { webpack }
 
 export interface AppsConfig {
     port: number
@@ -58,7 +13,7 @@ export interface AppsConfig {
     // must be defined with `path.resolve`
     root: string
     // folder below `root`, that contains the code files, defaults to `src`, must be relative
-    rootSrc: string
+    rootSrc?: string
 
     // the path to the e.g. `public` folder, must be below of `root`, must be defined with `path.resolve`
     contentBase: string
@@ -81,13 +36,13 @@ export interface AppsConfig {
     // passed to the webpack `CopyPlugin`
     copy?: { from: string, to: string }[]
     // extra plugins for webpack
-    plugins?: Configuration['plugins'][]
+    plugins?: WebpackConfiguration['plugins']
     // additional settings for the webpack `devServer` setting
-    devServer?: AppsConfigDevServer
+    devServer?: WebpackDevServerConfiguration
     // overwrite (not merge!) the webpack `optimization.splitChunks.cacheGroups` setting
     cacheGroups?: { [k: string]: any }
     // additional options for the `html-webpack-plugin`, used to modify the injection rules for `template`
-    htmlWebpackPluginOptions: Partial<Options>
+    htmlWebpackPluginOptions?: Partial<Options>
 
     // the webpack `devtools` config for either `serve` or/and `build`
     // https://webpack.js.org/configuration/devtool/#devtool
@@ -100,19 +55,23 @@ export interface AppsConfig {
     runtimeChunkBuild?: string | object | boolean
 
     // additional webpack configs to execute in parallel
-    webpackBuilds?: Configuration[]
+    webpackBuilds?: WebpackConfiguration[]
 
     // extra config, merged as last config into the respective part
     webpackConfig?: {
         // used for `build` or `serve`,
         // if defined additionally to e.g. `build`, then `global is merged first
-        global?: Partial<Configuration>
-        build?: Partial<Configuration>
-        serve?: Partial<Configuration>
+        global?: Partial<Omit<WebpackConfiguration, 'stats'>>
+        build?: Partial<Omit<WebpackConfiguration, 'stats'>>
+        serve?: Partial<Omit<WebpackConfiguration, 'stats'>>
     }
 
     // webpack config for `module.noParse`
     noParse?: any[]
+
+    // if the packages build folder should be aliased,
+    // for development only works for packages with enabled `doServeWatch`
+    aliasPackagesBuild?: 'always' | 'development' | 'production'
 }
 
 export interface BackendConfig {
@@ -148,8 +107,6 @@ export interface BackendConfig {
 export interface PackageConfig {
     name: string
     root: string
-    // folder below `root`, that contains the code files, defaults to `src`, must be relative
-    rootSrc?: string
     entry: string
     babelTargets?: {
         // min. empty string when directly in `dist` (`build` folder)
@@ -176,10 +133,8 @@ export function packer(
     root: string,
     // further global packer overwrites/configuration
     options?: {
-        // custom babel targets, `args` are passed to all pure-babel processes
-        babelTargets?: { distSuffix: string, args: string[] }[]
-        // the root folder of the packages, relative to the `root`
-        pathPackages?: string,
+        webpackStatsConfig?: WebpackStatsOptions
+
         // folder name for `packages` and `backends` building folder, not used for `apps`
         pathBuild?: string,
 
