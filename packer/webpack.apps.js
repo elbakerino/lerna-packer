@@ -148,6 +148,7 @@ const buildAppPair = (
         noParse,
         webpackConfig,
         aliasPackagesBuild,
+        sassOptions,
     } = appConfig
     return {
         dist,
@@ -161,6 +162,7 @@ const buildAppPair = (
                         src: rootSrc,
                         minimize: false,
                         hot: typeof devServer.hot !== 'undefined' ? devServer.hot : true,
+                        sassOptions: sassOptions,
                         include: [
                             ...Object.values(packages)
                                 // if aliasPackagesBuild is active for development, skip those with doServeWatch
@@ -233,6 +235,7 @@ const buildAppPair = (
                         context: root,
                         src: rootSrc,
                         minimize: true,
+                        sassOptions: sassOptions,
                         include: [
                             ...Object.values(packages)
                                 .filter(() => !aliasPackagesBuild || (aliasPackagesBuild !== 'always' && aliasPackagesBuild !== 'production'))

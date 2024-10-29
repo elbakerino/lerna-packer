@@ -72,6 +72,9 @@ export interface AppsConfig {
     // if the packages build folder should be aliased,
     // for development only works for packages with enabled `doServeWatch`
     aliasPackagesBuild?: 'always' | 'development' | 'production'
+
+    // options passed to sass-loader [`sassOptions`](https://www.npmjs.com/package/sass-loader#sassoptions)
+    sassOptions?: any
 }
 
 export interface BackendConfig {

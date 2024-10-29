@@ -17,6 +17,7 @@ function getConfig(
         // babelPresets = [],
         // babelPlugins = [],
         include = [],
+        sassOptions = {},
     } = {},
 ) {
     return {
@@ -115,7 +116,7 @@ function getConfig(
                     use: [
                         'style-loader',
                         'css-loader',
-                        'sass-loader',
+                        {loader: 'sass-loader', options: {sassOptions: sassOptions}},
                     ],
                 },
             ],
