@@ -65,7 +65,7 @@ exports.transformerForLegacyCjsFirst = ({level, root, dir}) => {
                 dir.slice(root.length + 1).replace(/\\/g, '/').split(/\//g).join('/'),
                 'index.js',
             ).replace(/\\/g, '/'),
-        typings: './index.d.ts',
+        types: './index.d.ts',
     }
 }
 
@@ -84,7 +84,7 @@ exports.transformerForLegacyEsmFirst = ({level, root, dir}) => {
                 'index.js',
             ).replace(/\\/g, '/'),
         module: './index.js',
-        typings: './index.d.ts',
+        types: './index.d.ts',
     }
 }
 
