@@ -25,6 +25,7 @@ const packer = async(
     const startTime = process.hrtime()
     const l = log('packer')
     const doServe = argv['serve'] === true ? true : (argv['serve'] || false)
+    const doServeBackends = argv['serve-backend'] === true ? true : (argv['serve-backend'] || false)
     const doClean = !!argv['clean']
     const doBuild = !!argv['build']
     const doBuildBabel = doBuild && !!argv['babel']
@@ -34,9 +35,6 @@ const packer = async(
 
     if(doClean) {
         // clean dists
-
-        // todo: a `lerna bootstrap --hoist` is needed afterwards, rimraf seems to break node_modules symlinking
-
         const promises = []
 
         for(let app in apps) {
@@ -156,24 +154,39 @@ const packer = async(
     }
 
     const backendsQty = Object.keys(backends).length
-    if(backendsQty && (doBuildBackend || doServe)) {
-        l(
-            (doBuildBackend ? 'Building backends:' : 'Start serving backends:') + ' ' +
-            Object.keys(backends).join(', '),
-        )
+    if(backendsQty && (doBuildBackend || doServeBackends)) {
+        if(doBuildBackend) {
+            l(
+                'Building backends: ' +
+                Object.keys(backends).join(', '),
+            )
+        } else if(doServeBackends === true) {
+            l('Starting all backends:')
+        } else {
+            l('Starting backends `' + doServeBackends + '`:')
+        }
+
+        const serveBackendId = doServeBackends
+            ? doServeBackends !== true
+                ? (Array.isArray(doServeBackends) ? doServeBackends : [doServeBackends])
+                : Object.keys(backends)
+            : false
         const backendPromises = []
         for(let backend in backends) {
+            if(doServeBackends && Array.isArray(serveBackendId) && serveBackendId.indexOf(backend) === -1) {
+                continue
+            }
             backendPromises.push(
                 buildNodePackage(
                     backend,
                     backends[backend].root,
                     backends[backend].src,
                     pathBuild,
-                    doServe,
+                    doServeBackends,
                     backends[backend].babelArgs,
                 ),
             )
-            if(doServe && typeof backends[backend].entry === 'string') {
+            if(doServeBackends && typeof backends[backend].entry === 'string') {
                 backendPromises.push(
                     startNodemon(
                         backend,
@@ -227,6 +240,7 @@ const packer = async(
 
     const execs = {
         doServe,
+        doServeBackends,
         doClean,
         doBuild,
         doBuildBabel,

@@ -8,6 +8,10 @@ function buildEsModule(
     isServing = false,
     cb,
 ) {
+    if(isServing && !pkg.doServeWatch) {
+        // console.log(`[${name}, babel buildEsModules] skipped package, no babel doServeWatch`)
+        return new Promise(resolve => resolve())
+    }
     try {
         fs.statSync(path.resolve(pkg.root, pathBuild))
     } catch(e) {
@@ -15,11 +19,6 @@ function buildEsModule(
         fs.mkdirSync(path.resolve(pkg.root, pathBuild))
     }
     return new Promise((resolve, reject) => {
-        if(isServing && !pkg.doServeWatch) {
-            // console.log(`[${name}, babel buildEsModules] skipped package, no babel doServeWatch`)
-            resolve()
-            return
-        }
         const entry = pkg.entry
         const dist = path.resolve(pkg.root, pathBuild + target.distSuffix)
 
