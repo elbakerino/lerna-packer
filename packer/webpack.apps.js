@@ -149,6 +149,7 @@ const buildAppPair = (
         webpackConfig,
         aliasPackagesBuild,
         sassOptions,
+        eslintOptions,
     } = appConfig
     return {
         dist,
@@ -163,6 +164,7 @@ const buildAppPair = (
                         minimize: false,
                         hot: typeof devServer.hot !== 'undefined' ? devServer.hot : true,
                         sassOptions: sassOptions,
+                        eslintOptions: eslintOptions,
                         include: [
                             ...Object.values(packages)
                                 // if aliasPackagesBuild is active for development, skip those with doServeWatch
@@ -236,6 +238,7 @@ const buildAppPair = (
                         src: rootSrc,
                         minimize: true,
                         sassOptions: sassOptions,
+                        eslintOptions: eslintOptions,
                         include: [
                             ...Object.values(packages)
                                 .filter(() => !aliasPackagesBuild || (aliasPackagesBuild !== 'always' && aliasPackagesBuild !== 'production'))

@@ -1,5 +1,6 @@
 import { Configuration as WebpackConfiguration, MultiStats, StatsOptions as WebpackStatsOptions } from 'webpack'
 import { Configuration as WebpackDevServerConfiguration } from 'webpack-dev-server'
+import { Options as EslintOptions } from 'eslint-webpack-plugin'
 import { Options } from 'html-webpack-plugin'
 
 import webpack = require('webpack')
@@ -75,6 +76,9 @@ export interface AppsConfig {
 
     // options passed to sass-loader [`sassOptions`](https://www.npmjs.com/package/sass-loader#sassoptions)
     sassOptions?: any
+
+    // options passed to eslint-webpack-plugin
+    eslintOptions?: EslintOptions
 }
 
 export interface BackendConfig {

@@ -18,6 +18,7 @@ function getConfig(
         // babelPlugins = [],
         include = [],
         sassOptions = {},
+        eslintOptions = {},
     } = {},
 ) {
     return {
@@ -181,6 +182,7 @@ function getConfig(
                 ],
                 failOnError: isProd, // reload dev-server even if lint errors
                 failOnWarning: isProd, // fail CI for lint warnings
+                ...eslintOptions,
             }),
         ],
     }
