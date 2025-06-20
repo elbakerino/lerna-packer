@@ -77,6 +77,11 @@ export interface AppsConfig {
     // options passed to sass-loader [`sassOptions`](https://www.npmjs.com/package/sass-loader#sassoptions)
     sassOptions?: any
 
+    // options passed to style-loader of the .css rule
+    styleLoaderOptions?: any
+    // options passed to css-loader of the .css rule
+    cssLoaderOptions?: any
+
     // options passed to eslint-webpack-plugin
     eslintOptions?: EslintOptions
 }

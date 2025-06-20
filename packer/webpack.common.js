@@ -18,6 +18,8 @@ function getConfig(
         // babelPlugins = [],
         include = [],
         sassOptions = {},
+        cssLoaderOptions = {},
+        styleLoaderOptions = {},
         eslintOptions = {},
     } = {},
 ) {
@@ -108,8 +110,8 @@ function getConfig(
                     test: /\.css$/i,
                     include: [/node_modules/],
                     use: [
-                        {loader: 'style-loader', options: {injectType: 'lazySingletonStyleTag'}},
-                        'css-loader',
+                        {loader: 'style-loader', options: {injectType: 'lazySingletonStyleTag', ...styleLoaderOptions}},
+                        {loader: 'css-loader', options: cssLoaderOptions},
                     ],
                 }, {
                     test: /\.s[ac]ss$/i,

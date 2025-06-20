@@ -149,6 +149,8 @@ const buildAppPair = (
         webpackConfig,
         aliasPackagesBuild,
         sassOptions,
+        styleLoaderOptions,
+        cssLoaderOptions,
         eslintOptions,
     } = appConfig
     return {
@@ -164,6 +166,8 @@ const buildAppPair = (
                         minimize: false,
                         hot: typeof devServer.hot !== 'undefined' ? devServer.hot : true,
                         sassOptions: sassOptions,
+                        styleLoaderOptions: styleLoaderOptions,
+                        cssLoaderOptions: cssLoaderOptions,
                         eslintOptions: eslintOptions,
                         include: [
                             ...Object.values(packages)
@@ -238,6 +242,8 @@ const buildAppPair = (
                         src: rootSrc,
                         minimize: true,
                         sassOptions: sassOptions,
+                        styleLoaderOptions: styleLoaderOptions,
+                        cssLoaderOptions: cssLoaderOptions,
                         eslintOptions: eslintOptions,
                         include: [
                             ...Object.values(packages)
