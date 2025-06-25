@@ -172,6 +172,7 @@ function getConfig(
                 exclude: [
                     /node_modules/,
                 ],
+                overlay: false,
             })] : [],
             new ESLintPlugin({
                 extensions: ['js', 'jsx', 'ts', 'tsx'],

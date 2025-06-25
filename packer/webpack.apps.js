@@ -200,17 +200,20 @@ const buildAppPair = (
                     },
                     devServer: {
                         ...devServer || {},
-                        static: typeof devServer.static === 'object' ? {
-                            ...devServer.static,
-                            directory: contentBase,
-                            publicPath: publicPath,
-                        } : [
-                            {
-                                directory: contentBase,
-                                publicPath: publicPath,
-                            },
-                            ...(devServer.static || []),
-                        ],
+                        static:
+                            typeof devServer.static === 'object' ?
+                                {
+                                    ...devServer.static,
+                                    directory: contentBase,
+                                    publicPath: publicPath,
+                                } :
+                                [
+                                    {
+                                        directory: contentBase,
+                                        publicPath: publicPath,
+                                    },
+                                    ...(devServer.static || []),
+                                ],
                         client: {
                             ...devServer.client || {},
                             logging: devServer.client && devServer.client.logging ? devServer.client.logging : 'info',
