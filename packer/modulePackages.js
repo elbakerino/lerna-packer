@@ -13,14 +13,15 @@ const {fileExists, fileScanner} = require('./tools')
  * @licence MIT
  * @param {string} root
  * @param {(info: {level: number, root: string, dir: string}) => object | null} transformer
- * @param {string[]} exclude
+ * @param {string[]?} exclude
+ * @param {string?} indexFileName
  */
-function createModulePackages(root, transformer, exclude = [path.resolve(root, 'esm')]) {
+function createModulePackages(root, transformer, exclude = [path.resolve(root, 'esm')], indexFileName = 'index.js') {
     return fileScanner(root, exclude, {
         onDir: (dir, level) => {
             return new Promise(((resolve) => {
                 fileExists(
-                    path.join(dir, 'index.js'),
+                    path.join(dir, indexFileName),
                     () => {
                         const packageJson = transformer({
                             level,

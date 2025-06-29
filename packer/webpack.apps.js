@@ -31,7 +31,7 @@ const buildAppConfig = (
     resolve: {
         // options for resolving module requests
         // (does not apply to resolving to loaders)
-        extensions: ['.tsx', '.ts', '.js', '.jsx'],
+        extensions: ['.tsx', '.ts', '.mts', '.js', '.jsx', '.mjs', '.cjs'],
         extensionAlias: {
             '.js': ['.ts', '.js', '.tsx', '.jsx'],
         },
