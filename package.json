@@ -1,6 +1,6 @@
 {
     "name": "lerna-packer",
-    "version": "0.12.2",
+    "version": "0.12.3",
     "description": "React multi-app and package build handling for lerna monorepo.",
     "keywords": [
         "lerna",
@@ -17,7 +17,7 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "https://github.com/elbakerino/lerna-packer.git"
+        "url": "git+https://github.com/elbakerino/lerna-packer.git"
     },
     "bugs": {
         "url": "https://github.com/elbakerino/lerna-packer/issues"

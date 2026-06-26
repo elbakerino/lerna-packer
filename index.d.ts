@@ -84,6 +84,9 @@ export interface AppsConfig {
 
     // options passed to eslint-webpack-plugin
     eslintOptions?: EslintOptions
+
+    // additional include paths for babel-loader
+    babelLoaderInclude?: string[]
 }
 
 export interface BackendConfig {

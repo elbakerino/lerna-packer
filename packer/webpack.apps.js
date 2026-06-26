@@ -152,6 +152,7 @@ const buildAppPair = (
         styleLoaderOptions,
         cssLoaderOptions,
         eslintOptions,
+        babelLoaderInclude,
     } = appConfig
     return {
         dist,
@@ -170,6 +171,7 @@ const buildAppPair = (
                         cssLoaderOptions: cssLoaderOptions,
                         eslintOptions: eslintOptions,
                         include: [
+                            ...babelLoaderInclude || [],
                             ...Object.values(packages)
                                 // if aliasPackagesBuild is active for development, skip those with doServeWatch
                                 .filter(({doServeWatch}) => !(aliasPackagesBuild === 'always' || aliasPackagesBuild === 'development') || !doServeWatch)
@@ -249,6 +251,7 @@ const buildAppPair = (
                         cssLoaderOptions: cssLoaderOptions,
                         eslintOptions: eslintOptions,
                         include: [
+                            ...babelLoaderInclude || [],
                             ...Object.values(packages)
                                 .filter(() => !aliasPackagesBuild || (aliasPackagesBuild !== 'always' && aliasPackagesBuild !== 'production'))
                                 .map(({entry}) => entry),
